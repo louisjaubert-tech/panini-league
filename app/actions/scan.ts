@@ -6,7 +6,8 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export type ScanState = {
   error?: string
-  success?: boolean
+  pack_id?: string
+  user_id?: string
 }
 
 export async function uploadPack(_prev: ScanState, formData: FormData): Promise<ScanState> {
@@ -55,13 +56,15 @@ export async function uploadPack(_prev: ScanState, formData: FormData): Promise<
     .from('pack-photos')
     .getPublicUrl(path)
 
-  const { error: dbError } = await supabaseAdmin
+  const { data: pack, error: dbError } = await supabaseAdmin
     .from('pack_openings')
     .insert({ user_id: user.id, photo_url: publicUrl, ocr_status: 'pending' })
+    .select('id')
+    .single()
 
-  if (dbError) {
-    return { error: `Erreur base de données : ${dbError.message}` }
+  if (dbError || !pack) {
+    return { error: `Erreur base de données : ${dbError?.message}` }
   }
 
-  return { success: true }
+  return { pack_id: pack.id as string, user_id: user.id }
 }
