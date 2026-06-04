@@ -6,7 +6,8 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin'
 // Helpers Vision — extraction des paragraphes avec coordonnées
 // ════════════════════════════════════════════════════════════
 
-type Para = { text: string; topY: number }
+type Vertex = { x?: number; y?: number }
+type Para = { text: string; topY: number; cx: number; cy: number }
 
 function paragraphText(para: {
   words: Array<{
@@ -30,8 +31,11 @@ function paragraphText(para: {
     .trim()
 }
 
-function topYOf(vertices: Array<{ x?: number; y?: number }> = []): number {
-  return Math.min(...vertices.map(v => v.y ?? 0))
+function centerOf(vertices: Vertex[] = []): { cx: number; cy: number } {
+  if (vertices.length === 0) return { cx: 0, cy: 0 }
+  const cx = vertices.reduce((s, v) => s + (v.x ?? 0), 0) / vertices.length
+  const cy = vertices.reduce((s, v) => s + (v.y ?? 0), 0) / vertices.length
+  return { cx, cy }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,20 +46,43 @@ function extractParagraphs(annotation: any): Para[] {
       for (const para of block.paragraphs ?? []) {
         const text = paragraphText(para)
         if (!text) continue
-        paras.push({ text, topY: topYOf(para.boundingBox?.vertices) })
+        const vertices: Vertex[] = para.boundingBox?.vertices ?? []
+        const topY = Math.min(...vertices.map((v: Vertex) => v.y ?? 0))
+        const { cx, cy } = centerOf(vertices)
+        paras.push({ text, topY, cx, cy })
       }
     }
   }
   return paras
 }
 
-/** Retourne le texte du bloc le plus proche au-dessus d'un bloc "kg", sans bruit. */
-function fallbackNameBlock(allParas: Para[], kgTopY: number): string | null {
-  const NOISE_RE = /\bkg\b|pani\b|panini|fifa|\d+[-./]\d+[-./]\d{3,4}/i
-  const candidates = allParas
-    .filter(p => p.topY < kgTopY && !NOISE_RE.test(p.text))
-    .sort((a, b) => b.topY - a.topY)
-  return candidates[0]?.text ?? null
+const NOISE_RE = /\bkg\b|pani\b|panini|fifa|\d+[-./]\d+[-./]\d{3,4}/i
+
+/**
+ * Retourne le paragraphe le plus proche en distance euclidienne du centre
+ * du bloc kg, en excluant les blocs bruyants et ceux de moins de 4 caractères.
+ */
+function fallbackNameBlock(
+  allParas: Para[],
+  kgPara: Para
+): { text: string; distance: number } | null {
+  let best: { para: Para; distance: number } | null = null
+
+  for (const p of allParas) {
+    if (p === kgPara) continue
+    if (NOISE_RE.test(p.text)) continue
+    if (p.text.trim().length < 4) continue
+
+    const dist = Math.sqrt(
+      (p.cx - kgPara.cx) ** 2 +
+      (p.cy - kgPara.cy) ** 2
+    )
+    if (!best || dist < best.distance) {
+      best = { para: p, distance: dist }
+    }
+  }
+
+  return best ? { text: best.para.text, distance: best.distance } : null
 }
 
 // ════════════════════════════════════════════════════════════
@@ -265,31 +292,23 @@ export async function POST(request: NextRequest) {
     if (hasValidName) {
       blocs.push(para.text)
     } else {
-      // ── Fallback : nom absent ou trop court avant la date ───
+      // ── Fallback distance euclidienne ────────────────────────
       const reason = dateMatch
         ? `nom avant date trop court ("${nameBeforeDate}")`
         : 'pas de date dans le bloc'
-      console.log(`[process-scan] fallback: ${reason} — topY=${para.topY} — "${para.text}"`)
+      console.log(`[process-scan] fallback: ${reason} — topY=${para.topY} cx=${para.cx.toFixed(0)} cy=${para.cy.toFixed(0)} — "${para.text}"`)
 
-      const NOISE_RE = /\bkg\b|pani\b|panini|fifa|\d+[-./]\d+[-./]\d{3,4}/i
-      const candidates = allParas
-        .filter(p => p.topY < para.topY && !NOISE_RE.test(p.text))
-        .sort((a, b) => b.topY - a.topY)
+      const nearest = fallbackNameBlock(allParas, para)
 
-      if (candidates.length === 0) {
-        console.log(`[process-scan] fallback: aucun candidat trouvé au-dessus`)
+      if (!nearest) {
+        console.log(`[process-scan] fallback: aucun candidat trouvé`)
       } else {
-        console.log(`[process-scan] fallback: ${candidates.length} candidat(s) :`)
-        candidates.forEach((c, i) =>
-          console.log(`[process-scan]   [${i}] topY=${c.topY}  "${c.text}"`)
-        )
-        console.log(`[process-scan] fallback: sélectionné → topY=${candidates[0].topY}  "${candidates[0].text}"`)
+        console.log(`[process-scan] fallback: sélectionné → distance=${nearest.distance.toFixed(1)}px  "${nearest.text}"`)
       }
 
-      const fallback = candidates[0]?.text ?? null
       // Fusionner le nom fallback avec le bloc kg pour que match-sticker
       // ait le contexte complet (date + poids présents dans le bloc kg)
-      blocs.push(fallback ? `${fallback} ${para.text}` : para.text)
+      blocs.push(nearest ? `${nearest.text} ${para.text}` : para.text)
     }
   }
 
