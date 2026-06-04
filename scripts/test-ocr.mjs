@@ -343,6 +343,20 @@ const paragraphs = extractParagraphs(annotation)
 log(`  ${paragraphs.length} paragraphe(s) analysé(s).`)
 log()
 
+// ── Liste complète de tous les paragraphes triés par topY ────
+log(hr('─'))
+log('  TOUS LES PARAGRAPHES (triés par topY croissant)')
+log(hr('─'))
+const sorted = [...paragraphs].sort((a, b) => a.topY - b.topY)
+sorted.forEach((p, i) => {
+  const hasKg   = /\bkg\b/i.test(p.text)
+  const kgFlag  = hasKg ? ' ◀ KG' : ''
+  const noiseRe = /\bkg\b|panini|fifa|\d{1,2}[-./]\d{1,2}[-./]\d{4}/i
+  const noiseFlag = (!hasKg && noiseRe.test(p.text)) ? ' [bruit]' : ''
+  log(`  [${String(i).padStart(2)}] y=${String(p.topY).padStart(4)}${kgFlag}${noiseFlag}  "${p.text}"`)
+})
+log()
+
 const stickers = []
 for (const para of paragraphs) {
   if (!/\bkg\b/i.test(para.text)) continue
@@ -351,13 +365,6 @@ for (const para of paragraphs) {
 }
 
 log(`⚽  ${stickers.length} sticker(s) détecté(s) (bloc contenant "kg").`)
-
-if (stickers.length === 0) {
-  // Affiche les blocs bruts pour debug
-  log()
-  log('  Blocs bruts (debug) :')
-  paragraphs.forEach((p, i) => log(`  [${String(i).padStart(2)}] y=${String(p.topY).padStart(4)}  "${p.text}"`))
-}
 log()
 
 // ── Étape 4 : Matching CSV ───────────────────────────────────
