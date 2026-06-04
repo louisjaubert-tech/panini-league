@@ -265,31 +265,18 @@ export async function POST(request: NextRequest) {
   }
 
   const fullText: string = annotation?.fullTextAnnotation?.text ?? ''
-  console.log(`[process-scan] ── TEXTE BRUT VISION (${fullText.length} caractères) ──`)
-  console.log(fullText.trim() || '(vide)')
-  console.log('[process-scan] ────────────────────────────────────────')
+  console.log(`[process-scan] texte brut reçu : ${fullText.length} caractères`)
 
   // ── 5. Extraction des blocs "kg" + fallback ───────────────
   const allParas = extractParagraphs(annotation)
-  console.log(`[process-scan] ── TOUS LES PARAGRAPHES (${allParas.length}) triés par topY ──`)
-  ;[...allParas]
-    .sort((a, b) => a.topY - b.topY)
-    .forEach((p, i) => {
-      const hasKg = /\bkg\b/i.test(p.text)
-      console.log(`[process-scan]   [${String(i).padStart(2)}] topY=${String(p.topY).padStart(4)}${hasKg ? ' ◀KG' : '    '}  "${p.text}"`)
-    })
-  console.log('[process-scan] ─────────────────────────────────────────')
+  console.log(`[process-scan] ${allParas.length} paragraphe(s) extrait(s) au total`)
 
   const blocs: string[] = []
 
   for (const para of allParas) {
     if (!/\bkg\b/i.test(para.text)) continue
 
-    // Extraire le nom avant la première date (s'il y en a une)
     const DATE_RE = /\d+[-./]\d+[-./]\d{3,4}/
-    const TEST_BLOC = '38-7-2002 | 181 m | 81 kg'
-    console.log(`[process-scan] DATE_RE pattern : ${DATE_RE}`)
-    console.log(`[process-scan] DATE_RE.test("${TEST_BLOC}") → ${DATE_RE.test(TEST_BLOC)}`)
     const dateMatch = DATE_RE.exec(para.text)
     const nameBeforeDate = dateMatch ? para.text.slice(0, dateMatch.index).trim() : null
     const hasValidName = nameBeforeDate !== null && nameBeforeDate.length >= 3
