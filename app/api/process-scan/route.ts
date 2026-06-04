@@ -51,7 +51,7 @@ function extractParagraphs(annotation: any): Para[] {
 
 /** Retourne le texte du bloc le plus proche au-dessus d'un bloc "kg", sans bruit. */
 function fallbackNameBlock(allParas: Para[], kgTopY: number): string | null {
-  const NOISE_RE = /\bkg\b|panini|fifa|\d{1,2}[-./]\d{1,2}[-./]\d{4}/i
+  const NOISE_RE = /\bkg\b|pani\b|panini|fifa|\d+[-./]\d+[-./]\d{3,4}/i
   const candidates = allParas
     .filter(p => p.topY < kgTopY && !NOISE_RE.test(p.text))
     .sort((a, b) => b.topY - a.topY)
@@ -138,8 +138,14 @@ export async function POST(request: NextRequest) {
   const afterMeta = await sharp(processedBuffer).metadata()
   console.log(`[process-scan] après traitement : ${afterMeta.width}×${afterMeta.height} — ${(processedBuffer.length / 1024).toFixed(1)} Ko`)
 
-  // ── 4. Google Cloud Vision ────────────────────────────────
-  const visionRes = await fetch(
+  // ── 4a. Vision TEXT_DETECTION pour détecter l'orientation ──
+  console.log('[process-scan] détection orientation (TEXT_DETECTION)…')
+
+  let finalBuffer = processedBuffer
+  let orientationAngle: number | null = null
+  let rotationApplied = 0
+
+  const orientRes = await fetch(
     `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
     {
       method: 'POST',
@@ -147,6 +153,54 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         requests: [{
           image: { content: processedBuffer.toString('base64') },
+          features: [{ type: 'TEXT_DETECTION', maxResults: 1 }],
+        }],
+      }),
+    }
+  )
+
+  if (orientRes.ok) {
+    const orientData = await orientRes.json()
+    const vertices = orientData.responses?.[0]?.textAnnotations?.[0]?.boundingPoly?.vertices
+
+    if (vertices && vertices.length >= 2) {
+      const angle = Math.atan2(
+        vertices[1].y - vertices[0].y,
+        vertices[1].x - vertices[0].x
+      ) * 180 / Math.PI
+
+      orientationAngle = angle
+      console.log(`[process-scan] angle détecté : ${angle.toFixed(1)}°`)
+
+      if (angle >= 45 && angle <= 135) {
+        // Image pivotée 90° sens horaire → corriger avec 270°
+        rotationApplied = 270
+        console.log('[process-scan] rotation appliquée : 270° (correction CW 90°)')
+        finalBuffer = await sharp(processedBuffer).rotate(270).jpeg({ quality: 85 }).toBuffer()
+      } else if (angle >= -135 && angle <= -45) {
+        // Image pivotée 90° sens antihoraire → corriger avec 90°
+        rotationApplied = 90
+        console.log('[process-scan] rotation appliquée : 90° (correction CCW 90°)')
+        finalBuffer = await sharp(processedBuffer).rotate(90).jpeg({ quality: 85 }).toBuffer()
+      } else {
+        console.log('[process-scan] orientation correcte, pas de rotation supplémentaire')
+      }
+    } else {
+      console.log('[process-scan] aucun texte détecté pour l\'orientation, appel DOCUMENT_TEXT_DETECTION direct')
+    }
+  } else {
+    console.warn('[process-scan] TEXT_DETECTION orientation échoué, on continue sans rotation')
+  }
+
+  // ── 4b. Google Cloud Vision DOCUMENT_TEXT_DETECTION ──────────
+  const visionRes = await fetch(
+    `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [{
+          image: { content: finalBuffer.toString('base64') },
           features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
         }],
       }),
@@ -193,7 +247,7 @@ export async function POST(request: NextRequest) {
     if (!/\bkg\b/i.test(para.text)) continue
 
     // Extraire le nom avant la première date (s'il y en a une)
-    const DATE_RE = /\d{1,2}[-./]\d{1,2}[-./]\d{4}/
+    const DATE_RE = /\d+[-./]\d+[-./]\d{3,4}/
     const dateMatch = DATE_RE.exec(para.text)
     const nameBeforeDate = dateMatch ? para.text.slice(0, dateMatch.index).trim() : null
     const hasValidName = nameBeforeDate !== null && nameBeforeDate.length >= 3
@@ -207,7 +261,7 @@ export async function POST(request: NextRequest) {
         : 'pas de date dans le bloc'
       console.log(`[process-scan] fallback: ${reason} — topY=${para.topY} — "${para.text}"`)
 
-      const NOISE_RE = /\bkg\b|panini|fifa|\d{1,2}[-./]\d{1,2}[-./]\d{4}/i
+      const NOISE_RE = /\bkg\b|pani\b|panini|fifa|\d+[-./]\d+[-./]\d{3,4}/i
       const candidates = allParas
         .filter(p => p.topY < para.topY && !NOISE_RE.test(p.text))
         .sort((a, b) => b.topY - a.topY)
