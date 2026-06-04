@@ -30,11 +30,21 @@ function similarity(a: string, b: string): number {
 // ════════════════════════════════════════════════════════════
 
 function normalize(str: string): string {
-  return str
+  const step1 = str
     .toLowerCase()
     .normalize('NFD')
     .replace(/\p{Mn}/gu, '')        // supprimer les diacritiques (catégorie Unicode Mn)
-    .replace(/[^a-z\s]/g, '')       // garder uniquement lettres et espaces
+    .replace(/[^a-z0-9\s]/g, '')    // garder lettres, chiffres et espaces pour l'étape suivante
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  // Supprimer tout ce qui suit le premier chiffre (données physiques, dates résiduelles)
+  // Ex: "ronwen williams 211 84 m 179 kg" → "ronwen williams"
+  const digitIdx = step1.search(/\d/)
+  const nameOnly = digitIdx !== -1 ? step1.slice(0, digitIdx).trim() : step1
+
+  return nameOnly
+    .replace(/[^a-z\s]/g, '')       // retirer les chiffres éventuellement restants
     .replace(/\s+/g, ' ')
     .trim()
 }
