@@ -39,7 +39,7 @@ if (!NEXT_PUBLIC_SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 }
 
 const BASE_URL = 'http://localhost:3000'
-const USER_ID  = 'aa35b926-03c8-42d5-af70-ba1299ddaa84'
+const USER_ID  = '1d0d6431-ab2e-471f-a049-264719b96b16'
 
 const supabase = createClient(NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
