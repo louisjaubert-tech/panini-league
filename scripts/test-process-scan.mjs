@@ -2,8 +2,8 @@
 /**
  * Usage: node scripts/test-process-scan.mjs
  *
- * Récupère le pack_openings le plus récent avec ocr_status = 'pending'
- * pour l'user donné, puis appelle POST /api/process-scan.
+ * Récupère TOUS les packs avec ocr_status = 'pending' pour l'user donné,
+ * les traite un par un dans l'ordre chronologique et affiche le résultat.
  * Le serveur Next.js doit être lancé sur http://localhost:3000.
  */
 
@@ -38,22 +38,21 @@ if (!NEXT_PUBLIC_SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   process.exit(1)
 }
 
-// ── Récupérer le pack pending le plus récent ─────────────────
-
 const BASE_URL = 'http://localhost:3000'
 const USER_ID  = 'aa35b926-03c8-42d5-af70-ba1299ddaa84'
 
 const supabase = createClient(NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-console.log(`🔍  Recherche du dernier pack pending pour user ${USER_ID}…`)
+// ── Récupérer tous les packs pending, ordre chronologique ────
+
+console.log(`🔍  Recherche des packs pending pour user ${USER_ID}…`)
 
 const { data: packs, error } = await supabase
   .from('pack_openings')
   .select('id, opened_at, photo_url, ocr_status')
   .eq('user_id', USER_ID)
   .eq('ocr_status', 'pending')
-  .order('opened_at', { ascending: false })
-  .limit(1)
+  .order('opened_at', { ascending: true })
 
 if (error) {
   console.error('❌  Erreur Supabase :', error.message)
@@ -65,30 +64,80 @@ if (!packs || packs.length === 0) {
   process.exit(1)
 }
 
-const pack = packs[0]
-console.log(`✅  pack_id      : ${pack.id}`)
-console.log(`   opened_at    : ${pack.opened_at}`)
-console.log(`   ocr_status   : ${pack.ocr_status}`)
-console.log(`   photo_url    : ${pack.photo_url}`)
+console.log(`✅  ${packs.length} pack(s) pending trouvé(s).`)
 console.log()
 
-// ── Appel POST /api/process-scan ─────────────────────────────
+// ── Traiter chaque pack séquentiellement ─────────────────────
 
-const payload = { pack_id: pack.id, user_id: USER_ID }
+const summary = []
 
-console.log('📤  POST', `${BASE_URL}/api/process-scan`)
-console.log('    Payload :', JSON.stringify(payload))
-console.log()
+for (let i = 0; i < packs.length; i++) {
+  const pack = packs[i]
 
-const res = await fetch(`${BASE_URL}/api/process-scan`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(payload),
-})
+  console.log('═'.repeat(62))
+  console.log(`  PACK ${i + 1} / ${packs.length}`)
+  console.log('═'.repeat(62))
+  console.log(`  pack_id    : ${pack.id}`)
+  console.log(`  opened_at  : ${pack.opened_at}`)
+  console.log(`  photo_url  : ${pack.photo_url}`)
+  console.log()
 
-console.log(`📥  Status : ${res.status} ${res.statusText}`)
-console.log()
+  const payload = { pack_id: pack.id, user_id: USER_ID }
 
-const data = await res.json()
-console.log('📋  Réponse :')
-console.log(JSON.stringify(data, null, 2))
+  console.log(`📤  POST ${BASE_URL}/api/process-scan`)
+  console.log(`    Payload : ${JSON.stringify(payload)}`)
+  console.log()
+
+  const res = await fetch(`${BASE_URL}/api/process-scan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  console.log(`📥  Status : ${res.status} ${res.statusText}`)
+  console.log()
+
+  const data = await res.json()
+  console.log('📋  Réponse :')
+  console.log(JSON.stringify(data, null, 2))
+  console.log()
+
+  // Résumé court pour ce pack
+  const stickers = data.stickers ?? []
+  const matched     = stickers.filter(s => s.status === 'matched').length
+  const needsReview = stickers.filter(s => s.status === 'needs_review').length
+  const unmatched   = stickers.filter(s => s.status === 'unmatched').length
+  const newBadges   = (data.new_badges ?? []).length
+
+  summary.push({
+    index: i + 1,
+    pack_id: pack.id,
+    opened_at: pack.opened_at,
+    http: res.status,
+    total: stickers.length,
+    matched,
+    needsReview,
+    unmatched,
+    newBadges,
+  })
+}
+
+// ── Résumé global ─────────────────────────────────────────────
+
+console.log('═'.repeat(62))
+console.log('  RÉSUMÉ GLOBAL')
+console.log('═'.repeat(62))
+console.log(`  ${packs.length} pack(s) traité(s)\n`)
+
+for (const s of summary) {
+  const status = s.http === 200 ? '✅' : '❌'
+  console.log(`  ${status} Pack ${s.index}  ${s.pack_id}`)
+  console.log(`     opened_at : ${s.opened_at}`)
+  if (s.http === 200) {
+    console.log(`     stickers  : ${s.total} total — ${s.matched} matchés, ${s.needsReview} à revoir, ${s.unmatched} non matchés`)
+    if (s.newBadges > 0) console.log(`     badges    : ${s.newBadges} nouveau(x)`)
+  } else {
+    console.log(`     HTTP ${s.http}`)
+  }
+  console.log()
+}
