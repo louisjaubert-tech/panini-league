@@ -84,11 +84,11 @@ for (let i = 0; i < packs.length; i++) {
 
   const payload = { pack_id: pack.id, user_id: USER_ID }
 
-  console.log(`📤  POST ${BASE_URL}/api/process-scan`)
+  console.log(`📤  POST ${BASE_URL}/api/scan-process`)
   console.log(`    Payload : ${JSON.stringify(payload)}`)
   console.log()
 
-  const res = await fetch(`${BASE_URL}/api/process-scan`, {
+  const res = await fetch(`${BASE_URL}/api/scan-process`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

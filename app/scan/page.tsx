@@ -108,7 +108,7 @@ export default function ScanPage() {
   const inputRef = useRef<HTMLInputElement>(null)
   const formRef  = useRef<HTMLFormElement>(null)
 
-  // Dès que l'upload réussit, appeler /api/process-scan côté client
+  // Dès que l'upload réussit, appeler /api/scan-process côté client
   useEffect(() => {
     if (!state.pack_id || !state.user_id) return
 
@@ -118,7 +118,7 @@ export default function ScanPage() {
     setAnalyzing(true)
     setAnalyzeError(null)
 
-    fetch('/api/process-scan', {
+    fetch('/api/scan-process', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pack_id: state.pack_id, user_id: state.user_id }),

@@ -97,7 +97,7 @@ function fallbackNameBlock(
 // ════════════════════════════════════════════════════════════
 
 export async function POST(request: NextRequest) {
-  console.log(`[process-scan] API key check: ${process.env.GOOGLE_VISION_API_KEY?.slice(0, 10)}`)
+  console.log(`[scan-process] API key check: ${process.env.GOOGLE_VISION_API_KEY?.slice(0, 10)}`)
 
   // ── Validation ────────────────────────────────────────────
   let body: { pack_id?: unknown; user_id?: unknown }
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (packErr || !pack) {
-    console.error('[process-scan] pack_openings fetch:', packErr?.message)
+    console.error('[scan-process] pack_openings fetch:', packErr?.message)
     return NextResponse.json({ error: 'Pack introuvable.' }, { status: 404 })
   }
 
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
     .eq('id', pack_id)
 
   // ── 2. Télécharger la photo ───────────────────────────────
-  console.log('[process-scan] téléchargement :', pack.photo_url)
+  console.log('[scan-process] téléchargement :', pack.photo_url)
 
   const imgRes = await fetch(pack.photo_url as string)
   if (!imgRes.ok) {
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
 
   // ── 3. Prétraitement Sharp ────────────────────────────────
   const beforeMeta = await sharp(rawBuffer).metadata()
-  console.log(`[process-scan] image originale : ${beforeMeta.width}×${beforeMeta.height} orientation=${beforeMeta.orientation ?? 'none'}`)
+  console.log(`[scan-process] image originale : ${beforeMeta.width}×${beforeMeta.height} orientation=${beforeMeta.orientation ?? 'none'}`)
 
   const processedBuffer = await sharp(rawBuffer)
     .rotate()
@@ -172,10 +172,10 @@ export async function POST(request: NextRequest) {
     .toBuffer()
 
   const afterMeta = await sharp(processedBuffer).metadata()
-  console.log(`[process-scan] après traitement : ${afterMeta.width}×${afterMeta.height} — ${(processedBuffer.length / 1024).toFixed(1)} Ko`)
+  console.log(`[scan-process] après traitement : ${afterMeta.width}×${afterMeta.height} — ${(processedBuffer.length / 1024).toFixed(1)} Ko`)
 
   // ── 4a. Vision TEXT_DETECTION pour détecter l'orientation ──
-  console.log('[process-scan] détection orientation (TEXT_DETECTION)…')
+  console.log('[scan-process] détection orientation (TEXT_DETECTION)…')
 
   let finalBuffer = processedBuffer
   let orientationAngle: number | null = null
@@ -206,32 +206,32 @@ export async function POST(request: NextRequest) {
       ) * 180 / Math.PI
 
       orientationAngle = angle
-      console.log(`[process-scan] angle détecté : ${angle.toFixed(1)}°`)
+      console.log(`[scan-process] angle détecté : ${angle.toFixed(1)}°`)
 
       if (angle >= 45 && angle <= 135) {
         // Image pivotée 90° sens horaire → corriger avec 270°
         rotationApplied = 270
-        console.log('[process-scan] rotation appliquée : 270° (correction CW 90°)')
+        console.log('[scan-process] rotation appliquée : 270° (correction CW 90°)')
         finalBuffer = await sharp(processedBuffer).rotate(270).jpeg({ quality: 85 }).toBuffer()
       } else if (angle >= -135 && angle <= -45) {
         // Image pivotée 90° sens antihoraire → corriger avec 90°
         rotationApplied = 90
-        console.log('[process-scan] rotation appliquée : 90° (correction CCW 90°)')
+        console.log('[scan-process] rotation appliquée : 90° (correction CCW 90°)')
         finalBuffer = await sharp(processedBuffer).rotate(90).jpeg({ quality: 85 }).toBuffer()
       } else {
-        console.log('[process-scan] orientation correcte, pas de rotation supplémentaire')
+        console.log('[scan-process] orientation correcte, pas de rotation supplémentaire')
       }
     } else {
-      console.log('[process-scan] aucun texte détecté pour l\'orientation, appel DOCUMENT_TEXT_DETECTION direct')
+      console.log('[scan-process] aucun texte détecté pour l\'orientation, appel DOCUMENT_TEXT_DETECTION direct')
     }
   } else {
-    console.warn('[process-scan] TEXT_DETECTION orientation échoué, on continue sans rotation')
+    console.warn('[scan-process] TEXT_DETECTION orientation échoué, on continue sans rotation')
   }
 
   // ── 4b. Google Cloud Vision DOCUMENT_TEXT_DETECTION ──────────
   // On envoie l'image originale non modifiée pour préserver la qualité maximale.
   // Sharp est utilisé uniquement pour la détection d'orientation (appel TEXT_DETECTION ci-dessus).
-  console.log(`[process-scan] DOCUMENT_TEXT_DETECTION sur image originale (${(rawBuffer.length / 1024).toFixed(1)} Ko)`)
+  console.log(`[scan-process] DOCUMENT_TEXT_DETECTION sur image originale (${(rawBuffer.length / 1024).toFixed(1)} Ko)`)
   const visionRes = await fetch(
     `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
     {
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
 
   if (!visionRes.ok) {
     const errText = await visionRes.text()
-    console.error('[process-scan] Vision API HTTP error:', errText)
+    console.error('[scan-process] Vision API HTTP error:', errText)
     await supabaseAdmin
       .from('pack_openings')
       .update({ ocr_status: 'error' })
@@ -263,7 +263,7 @@ export async function POST(request: NextRequest) {
   const annotation = visionData.responses?.[0]
 
   if (annotation?.error) {
-    console.error('[process-scan] Vision API error:', annotation.error.message)
+    console.error('[scan-process] Vision API error:', annotation.error.message)
     await supabaseAdmin
       .from('pack_openings')
       .update({ ocr_status: 'error' })
@@ -272,11 +272,11 @@ export async function POST(request: NextRequest) {
   }
 
   const fullText: string = annotation?.fullTextAnnotation?.text ?? ''
-  console.log(`[process-scan] texte brut reçu : ${fullText.length} caractères`)
+  console.log(`[scan-process] texte brut reçu : ${fullText.length} caractères`)
 
   // ── 5. Extraction des blocs "kg" + fallback ───────────────
   const allParas = extractParagraphs(annotation)
-  console.log(`[process-scan] ${allParas.length} paragraphe(s) extrait(s) au total`)
+  console.log(`[scan-process] ${allParas.length} paragraphe(s) extrait(s) au total`)
 
   const blocs: string[] = []
 
@@ -295,14 +295,14 @@ export async function POST(request: NextRequest) {
       const reason = dateMatch
         ? `nom avant date trop court ("${nameBeforeDate}")`
         : 'pas de date dans le bloc'
-      console.log(`[process-scan] fallback: ${reason} — topY=${para.topY} cx=${para.cx.toFixed(0)} cy=${para.cy.toFixed(0)} — "${para.text}"`)
+      console.log(`[scan-process] fallback: ${reason} — topY=${para.topY} cx=${para.cx.toFixed(0)} cy=${para.cy.toFixed(0)} — "${para.text}"`)
 
       const nearest = fallbackNameBlock(allParas, para)
 
       if (!nearest) {
-        console.log(`[process-scan] fallback: aucun candidat trouvé`)
+        console.log(`[scan-process] fallback: aucun candidat trouvé`)
       } else {
-        console.log(`[process-scan] fallback: sélectionné → distance=${nearest.distance.toFixed(1)}px  "${nearest.text}"`)
+        console.log(`[scan-process] fallback: sélectionné → distance=${nearest.distance.toFixed(1)}px  "${nearest.text}"`)
       }
 
       // Fusionner le nom fallback avec le bloc kg pour que match-sticker
@@ -311,14 +311,14 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  console.log(`[process-scan] ── ${blocs.length} BLOC(S) "kg" TROUVÉ(S) ──`)
+  console.log(`[scan-process] ── ${blocs.length} BLOC(S) "kg" TROUVÉ(S) ──`)
   blocs.forEach((b, i) => {
-    console.log(`[process-scan]   [${i + 1}/${blocs.length}] "${b}"`)
+    console.log(`[scan-process]   [${i + 1}/${blocs.length}] "${b}"`)
   })
   if (blocs.length === 0) {
-    console.log('[process-scan]   (aucun bloc contenant "kg" détecté)')
+    console.log('[scan-process]   (aucun bloc contenant "kg" détecté)')
   }
-  console.log('[process-scan] ────────────────────────────────────────')
+  console.log('[scan-process] ────────────────────────────────────────')
 
   // ── 6. Matching des stickers (appel direct, sans HTTP) ───────
   let stickers
@@ -326,7 +326,7 @@ export async function POST(request: NextRequest) {
     stickers = await matchStickers(blocs, user_id as string, pack_id as string)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur matching.'
-    console.error('[process-scan] matchStickers:', message)
+    console.error('[scan-process] matchStickers:', message)
     await supabaseAdmin.from('pack_openings').update({ ocr_status: 'error' }).eq('id', pack_id)
     return NextResponse.json({ error: message }, { status: 500 })
   }
@@ -338,7 +338,7 @@ export async function POST(request: NextRequest) {
     .eq('id', pack_id)
 
   if (updateErr) {
-    console.error('[process-scan] pack_openings update:', updateErr.message)
+    console.error('[scan-process] pack_openings update:', updateErr.message)
   }
 
   // ── 8. Vérification des badges (appel direct, sans HTTP) ──
@@ -347,7 +347,7 @@ export async function POST(request: NextRequest) {
     const badgesResult = await checkBadges(user_id as string)
     new_badges = badgesResult.new_badges
   } catch (err) {
-    console.error('[process-scan] checkBadges:', err instanceof Error ? err.message : err)
+    console.error('[scan-process] checkBadges:', err instanceof Error ? err.message : err)
   }
 
   // ── 9. Réponse ────────────────────────────────────────────
