@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import sharp from 'sharp'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { matchStickers } from '@/lib/matchSticker'
+import { checkBadges } from '@/lib/checkBadges'
 
 // ════════════════════════════════════════════════════════════
 // Helpers Vision — extraction des paragraphes avec coordonnées
@@ -313,31 +315,16 @@ export async function POST(request: NextRequest) {
   }
   console.log('[process-scan] ────────────────────────────────────────')
 
-  // ── 6. Appeler /api/match-sticker ─────────────────────────
-  const origin = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:3000'
-
-  const matchRes = await fetch(`${origin}/api/match-sticker`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ blocs, user_id, pack_id }),
-  })
-
-  if (!matchRes.ok) {
-    const errText = await matchRes.text()
-    console.error('[process-scan] match-sticker error:', errText)
-    await supabaseAdmin
-      .from('pack_openings')
-      .update({ ocr_status: 'error' })
-      .eq('id', pack_id)
-    return NextResponse.json(
-      { error: `match-sticker a échoué (HTTP ${matchRes.status}).` },
-      { status: 502 }
-    )
+  // ── 6. Matching des stickers (appel direct, sans HTTP) ───────
+  let stickers
+  try {
+    stickers = await matchStickers(blocs, user_id as string, pack_id as string)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Erreur matching.'
+    console.error('[process-scan] matchStickers:', message)
+    await supabaseAdmin.from('pack_openings').update({ ocr_status: 'error' }).eq('id', pack_id)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
-
-  const stickers = await matchRes.json()
 
   // ── 7. Mettre à jour ocr_status = 'done' ─────────────────
   const { error: updateErr } = await supabaseAdmin
@@ -349,20 +336,13 @@ export async function POST(request: NextRequest) {
     console.error('[process-scan] pack_openings update:', updateErr.message)
   }
 
-  // ── 8. Appeler /api/check-badges ──────────────────────────
+  // ── 8. Vérification des badges (appel direct, sans HTTP) ──
   let new_badges: unknown[] = []
-
-  const badgesRes = await fetch(`${origin}/api/check-badges`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id }),
-  })
-
-  if (badgesRes.ok) {
-    const badgesData = await badgesRes.json()
-    new_badges = badgesData.new_badges ?? []
-  } else {
-    console.error('[process-scan] check-badges error:', badgesRes.status)
+  try {
+    const badgesResult = await checkBadges(user_id as string)
+    new_badges = badgesResult.new_badges
+  } catch (err) {
+    console.error('[process-scan] checkBadges:', err instanceof Error ? err.message : err)
   }
 
   // ── 9. Réponse ────────────────────────────────────────────
