@@ -197,7 +197,25 @@ export async function POST(request: NextRequest) {
     if (hasDate) {
       blocs.push(para.text)
     } else {
-      const fallback = fallbackNameBlock(allParas, para.topY)
+      // ── Fallback debug ──────────────────────────────────────
+      console.log(`[process-scan] fallback: bloc kg sans date — topY=${para.topY} — "${para.text}"`)
+
+      const NOISE_RE = /\bkg\b|panini|fifa|\d{1,2}[-./]\d{1,2}[-./]\d{4}/i
+      const candidates = allParas
+        .filter(p => p.topY < para.topY && !NOISE_RE.test(p.text))
+        .sort((a, b) => b.topY - a.topY)
+
+      if (candidates.length === 0) {
+        console.log(`[process-scan] fallback: aucun candidat trouvé au-dessus`)
+      } else {
+        console.log(`[process-scan] fallback: ${candidates.length} candidat(s) :`)
+        candidates.forEach((c, i) =>
+          console.log(`[process-scan]   [${i}] topY=${c.topY}  "${c.text}"`)
+        )
+        console.log(`[process-scan] fallback: sélectionné → topY=${candidates[0].topY}  "${candidates[0].text}"`)
+      }
+
+      const fallback = candidates[0]?.text ?? null
       blocs.push(fallback ? `${fallback} ${para.text}` : para.text)
     }
   }
