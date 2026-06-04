@@ -179,31 +179,37 @@ export async function POST(request: NextRequest) {
   }
 
   const fullText: string = annotation?.fullTextAnnotation?.text ?? ''
-  console.log(`[process-scan] texte brut reçu : ${fullText.length} caractères`)
+  console.log(`[process-scan] ── TEXTE BRUT VISION (${fullText.length} caractères) ──`)
+  console.log(fullText.trim() || '(vide)')
+  console.log('[process-scan] ────────────────────────────────────────')
 
   // ── 5. Extraction des blocs "kg" + fallback ───────────────
   const allParas = extractParagraphs(annotation)
-  console.log(`[process-scan] ${allParas.length} paragraphe(s) extrait(s)`)
+  console.log(`[process-scan] ${allParas.length} paragraphe(s) extrait(s) au total`)
 
   const blocs: string[] = []
 
   for (const para of allParas) {
     if (!/\bkg\b/i.test(para.text)) continue
 
-    // Vérifier si le bloc contient déjà une date (extraction directe possible)
     const hasDate = /\d{1,2}[-./]\d{1,2}[-./]\d{4}/.test(para.text)
 
     if (hasDate) {
       blocs.push(para.text)
     } else {
-      // Fallback : chercher le bloc le plus proche au-dessus
       const fallback = fallbackNameBlock(allParas, para.topY)
-      // Fusionner : nom fallback + bloc kg pour que match-sticker ait le contexte complet
       blocs.push(fallback ? `${fallback} ${para.text}` : para.text)
     }
   }
 
-  console.log(`[process-scan] ${blocs.length} bloc(s) sticker extrait(s) :`, blocs)
+  console.log(`[process-scan] ── ${blocs.length} BLOC(S) "kg" TROUVÉ(S) ──`)
+  blocs.forEach((b, i) => {
+    console.log(`[process-scan]   [${i + 1}/${blocs.length}] "${b}"`)
+  })
+  if (blocs.length === 0) {
+    console.log('[process-scan]   (aucun bloc contenant "kg" détecté)')
+  }
+  console.log('[process-scan] ────────────────────────────────────────')
 
   // ── 6. Appeler /api/match-sticker ─────────────────────────
   const origin = new URL(request.url).origin
