@@ -314,7 +314,9 @@ export async function POST(request: NextRequest) {
   console.log('[process-scan] ────────────────────────────────────────')
 
   // ── 6. Appeler /api/match-sticker ─────────────────────────
-  const origin = new URL(request.url).origin
+  const origin = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000'
 
   const matchRes = await fetch(`${origin}/api/match-sticker`, {
     method: 'POST',
