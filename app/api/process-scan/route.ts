@@ -227,6 +227,9 @@ export async function POST(request: NextRequest) {
   }
 
   // ── 4b. Google Cloud Vision DOCUMENT_TEXT_DETECTION ──────────
+  // On envoie l'image originale non modifiée pour préserver la qualité maximale.
+  // Sharp est utilisé uniquement pour la détection d'orientation (appel TEXT_DETECTION ci-dessus).
+  console.log(`[process-scan] DOCUMENT_TEXT_DETECTION sur image originale (${(rawBuffer.length / 1024).toFixed(1)} Ko)`)
   const visionRes = await fetch(
     `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
     {
@@ -234,7 +237,7 @@ export async function POST(request: NextRequest) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         requests: [{
-          image: { content: finalBuffer.toString('base64') },
+          image: { content: rawBuffer.toString('base64') },
           features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
         }],
       }),
