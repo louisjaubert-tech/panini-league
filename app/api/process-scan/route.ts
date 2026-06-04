@@ -248,6 +248,9 @@ export async function POST(request: NextRequest) {
 
     // Extraire le nom avant la première date (s'il y en a une)
     const DATE_RE = /\d+[-./]\d+[-./]\d{3,4}/
+    const TEST_BLOC = '38-7-2002 | 181 m | 81 kg'
+    console.log(`[process-scan] DATE_RE pattern : ${DATE_RE}`)
+    console.log(`[process-scan] DATE_RE.test("${TEST_BLOC}") → ${DATE_RE.test(TEST_BLOC)}`)
     const dateMatch = DATE_RE.exec(para.text)
     const nameBeforeDate = dateMatch ? para.text.slice(0, dateMatch.index).trim() : null
     const hasValidName = nameBeforeDate !== null && nameBeforeDate.length >= 3
