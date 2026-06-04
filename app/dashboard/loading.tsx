@@ -1,14 +1,10 @@
-import Header from '@/components/Header'
-
 function Skeleton({ className }: { className: string }) {
   return <div className={`animate-pulse rounded-xl bg-gray-200 ${className}`} />
 }
 
 export default function DashboardLoading() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
+    <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
         {/* Titre */}
         <Skeleton className="mb-2 h-8 w-56" />
         <Skeleton className="mb-10 h-4 w-72" />
@@ -38,7 +34,6 @@ export default function DashboardLoading() {
             ))}
           </div>
         </div>
-      </main>
-    </div>
+    </main>
   )
 }

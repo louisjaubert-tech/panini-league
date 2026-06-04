@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import Header from '@/components/Header'
 import DashboardClient from './DashboardClient'
 import { fetchDashboardData } from '@/app/actions/dashboard'
 
@@ -25,9 +24,7 @@ export default async function DashboardPage() {
     (user.user_metadata?.username as string | undefined) ?? user.email ?? 'Joueur'
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
+    <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
             Bonjour, {username} 👋
@@ -37,7 +34,6 @@ export default async function DashboardPage() {
           </p>
         </div>
         <DashboardClient userId={user.id} initial={data} />
-      </main>
-    </div>
+    </main>
   )
 }

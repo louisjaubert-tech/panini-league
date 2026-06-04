@@ -2,7 +2,6 @@
 
 import { useActionState, useRef, useState, useEffect } from 'react'
 import Image from 'next/image'
-import Header from '@/components/Header'
 import { uploadPack } from '@/app/actions/scan'
 
 export default function ScanPage() {
@@ -35,10 +34,7 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-
-      <main className="mx-auto max-w-lg px-4 sm:px-6 py-12">
+    <main className="mx-auto max-w-lg px-4 sm:px-6 py-12">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Scanner un blister</h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -150,7 +146,6 @@ export default function ScanPage() {
             )}
           </form>
         )}
-      </main>
-    </div>
+    </main>
   )
 }

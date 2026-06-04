@@ -1,14 +1,14 @@
 'use server'
 
 import { cookies } from 'next/headers'
-import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export type Badge = {
-  id: string
+  badge_id: string
   name: string
-  icon: string
   description: string
-  earned_at: string
+  obtained_at: string
 }
 
 export type PackOpening = {
@@ -49,10 +49,10 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
     badgesResult,
     packsResult,
   ] = await Promise.all([
-    // Nombre de cartes uniques
+    // Nombre de cartes uniques (une ligne par sticker dans user_collection)
     supabaseAdmin
-      .from('user_stickers')
-      .select('sticker_id', { count: 'exact', head: true })
+      .from('user_collection')
+      .select('*', { count: 'exact', head: true })
       .eq('user_id', uid),
 
     // Total de la référence
@@ -62,14 +62,14 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
 
     // Doublons : somme de (quantity - 1) pour les cartes en double
     supabaseAdmin
-      .from('user_stickers')
+      .from('user_collection')
       .select('quantity')
       .eq('user_id', uid)
       .gt('quantity', 1),
 
     // Pays distincts présents dans la collection
     supabaseAdmin
-      .from('user_stickers')
+      .from('user_collection')
       .select('stickers_reference!inner(country)')
       .eq('user_id', uid),
 
@@ -77,16 +77,15 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
     supabaseAdmin
       .from('user_badges')
       .select(`
-        earned_at,
+        obtained_at,
         badges_reference (
-          id,
+          badge_id,
           name,
-          icon,
           description
         )
       `)
       .eq('user_id', uid)
-      .order('earned_at', { ascending: false })
+      .order('obtained_at', { ascending: false })
       .limit(3),
 
     // 5 derniers blisters
@@ -123,18 +122,16 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
       ?.map((row) => {
         const rawRef = row.badges_reference
         const ref = (Array.isArray(rawRef) ? rawRef[0] : rawRef) as {
-          id: string
+          badge_id: string
           name: string
-          icon: string
           description: string
         } | null
         if (!ref) return null
         return {
-          id: ref.id,
+          badge_id: ref.badge_id,
           name: ref.name,
-          icon: ref.icon,
           description: ref.description,
-          earned_at: row.earned_at as string,
+          obtained_at: row.obtained_at as string,
         }
       })
       .filter(Boolean) as Badge[] ?? []

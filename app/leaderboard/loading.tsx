@@ -1,14 +1,10 @@
-import PublicHeader from '@/components/PublicHeader'
-
 function Skeleton({ className }: { className: string }) {
   return <div className={`animate-pulse rounded-xl bg-gray-200 ${className}`} />
 }
 
 export default function LeaderboardLoading() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <PublicHeader />
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
+    <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
         <Skeleton className="mb-2 h-8 w-44" />
         <Skeleton className="mb-8 h-4 w-56" />
 
@@ -39,7 +35,6 @@ export default function LeaderboardLoading() {
             <Skeleton key={i} className="h-28 w-full rounded-2xl" />
           ))}
         </div>
-      </main>
-    </div>
+    </main>
   )
 }

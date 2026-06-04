@@ -1,7 +1,8 @@
 'use server'
 
 import { cookies } from 'next/headers'
-import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export type ScanState = {
   error?: string

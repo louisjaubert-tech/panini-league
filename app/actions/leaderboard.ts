@@ -1,6 +1,6 @@
 'use server'
 
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export type LeaderboardRow = {
   rank: number
@@ -13,12 +13,12 @@ export type LeaderboardRow = {
 }
 
 export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
-  const [stickersResult, totalRefResult, badgesResult, usersResult] =
+  const [collectionResult, totalRefResult, badgesResult, profilesResult] =
     await Promise.all([
-      // Toutes les cartes de tous les users (avec le pays via join)
+      // Toutes les cartes de la collection (avec le pays via join)
       supabaseAdmin
-        .from('scanned_stickers')
-        .select('user_id, sticker_id, stickers_reference(country)'),
+        .from('user_collection')
+        .select('user_id, sticker_id, stickers_reference!inner(country)'),
 
       // Total de référence
       supabaseAdmin
@@ -28,15 +28,18 @@ export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
       // Tous les badges
       supabaseAdmin.from('user_badges').select('user_id'),
 
-      // Tous les utilisateurs (auth admin, page 1 — max 1000)
-      supabaseAdmin.auth.admin.listUsers({ perPage: 1000, page: 1 }),
+      // Tous les profils (usernames)
+      supabaseAdmin.from('profiles').select('id, username'),
     ])
 
-  if (stickersResult.error) {
-    console.error('[leaderboard] scanned_stickers:', stickersResult.error.message)
+  if (collectionResult.error) {
+    console.error('[leaderboard] user_collection:', collectionResult.error.message)
   }
   if (badgesResult.error) {
     console.error('[leaderboard] user_badges:', badgesResult.error.message)
+  }
+  if (profilesResult.error) {
+    console.error('[leaderboard] profiles:', profilesResult.error.message)
   }
 
   const totalRef = totalRefResult.count ?? 0
@@ -51,7 +54,7 @@ export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
 
   const statsMap = new Map<string, UserStats>()
 
-  for (const row of stickersResult.data ?? []) {
+  for (const row of collectionResult.data ?? []) {
     const uid = row.user_id as string
     if (!statsMap.has(uid)) {
       statsMap.set(uid, { stickerIds: new Set(), countries: new Set(), badgeCount: 0 })
@@ -72,15 +75,14 @@ export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
     statsMap.get(uid)!.badgeCount += 1
   }
 
-  // ── Résoudre les usernames ──────────────────────────────────────────────────
+  // ── Résoudre les usernames depuis profiles ──────────────────────────────────
 
   const usernameMap = new Map<string, string>()
-  for (const u of usersResult.data?.users ?? []) {
-    const name =
-      (u.user_metadata?.username as string | undefined) ??
-      u.email?.split('@')[0] ??
-      'Joueur'
-    usernameMap.set(u.id, name)
+  for (const profile of profilesResult.data ?? []) {
+    usernameMap.set(
+      profile.id as string,
+      (profile.username as string | null) ?? 'Joueur',
+    )
   }
 
   // ── Construire + trier ──────────────────────────────────────────────────────

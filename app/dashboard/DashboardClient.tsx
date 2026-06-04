@@ -1,15 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import Image from 'next/image'
+import { supabase as supabaseBrowser } from '@/lib/supabase'
 import { fetchDashboardData, type DashboardData, type Badge, type PackOpening } from '@/app/actions/dashboard'
-
-// Client Supabase côté navigateur (uniquement pour les souscriptions Realtime)
-const supabaseBrowser = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 function StatCard({
   label,
@@ -73,7 +67,7 @@ export default function DashboardClient({
       .channel(`dashboard:${userId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'user_stickers',  filter: `user_id=eq.${userId}` },
+        { event: '*', schema: 'public', table: 'user_collection', filter: `user_id=eq.${userId}` },
         () => refresh()
       )
       .on(
@@ -184,18 +178,18 @@ export default function DashboardClient({
             <ul className="space-y-3">
               {recentBadges.map((badge: Badge) => (
                 <li
-                  key={badge.id}
+                  key={badge.badge_id}
                   className="flex items-center gap-4 rounded-2xl bg-white border border-gray-100 px-5 py-4 shadow-sm"
                 >
                   <span className="text-3xl leading-none" role="img" aria-label={badge.name}>
-                    {badge.icon}
+                    🏅
                   </span>
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 truncate">{badge.name}</p>
                     <p className="text-xs text-gray-500 truncate">{badge.description}</p>
                   </div>
                   <time className="ml-auto shrink-0 text-xs text-gray-400 tabular-nums">
-                    {new Date(badge.earned_at).toLocaleDateString('fr-FR', {
+                    {new Date(badge.obtained_at).toLocaleDateString('fr-FR', {
                       day: '2-digit',
                       month: 'short',
                     })}
