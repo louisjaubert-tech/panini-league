@@ -192,13 +192,20 @@ export async function POST(request: NextRequest) {
   for (const para of allParas) {
     if (!/\bkg\b/i.test(para.text)) continue
 
-    const hasDate = /\d{1,2}[-./]\d{1,2}[-./]\d{4}/.test(para.text)
+    // Extraire le nom avant la première date (s'il y en a une)
+    const DATE_RE = /\d{1,2}[-./]\d{1,2}[-./]\d{4}/
+    const dateMatch = DATE_RE.exec(para.text)
+    const nameBeforeDate = dateMatch ? para.text.slice(0, dateMatch.index).trim() : null
+    const hasValidName = nameBeforeDate !== null && nameBeforeDate.length >= 3
 
-    if (hasDate) {
+    if (hasValidName) {
       blocs.push(para.text)
     } else {
-      // ── Fallback debug ──────────────────────────────────────
-      console.log(`[process-scan] fallback: bloc kg sans date — topY=${para.topY} — "${para.text}"`)
+      // ── Fallback : nom absent ou trop court avant la date ───
+      const reason = dateMatch
+        ? `nom avant date trop court ("${nameBeforeDate}")`
+        : 'pas de date dans le bloc'
+      console.log(`[process-scan] fallback: ${reason} — topY=${para.topY} — "${para.text}"`)
 
       const NOISE_RE = /\bkg\b|panini|fifa|\d{1,2}[-./]\d{1,2}[-./]\d{4}/i
       const candidates = allParas
@@ -216,6 +223,8 @@ export async function POST(request: NextRequest) {
       }
 
       const fallback = candidates[0]?.text ?? null
+      // Fusionner le nom fallback avec le bloc kg pour que match-sticker
+      // ait le contexte complet (date + poids présents dans le bloc kg)
       blocs.push(fallback ? `${fallback} ${para.text}` : para.text)
     }
   }
