@@ -58,9 +58,13 @@ function extractParagraphs(annotation: any): Para[] {
 
 const NOISE_RE = /\bkg\b|pani\b|panini|fifa|\d+[-./]\d+[-./]\d{3,4}/i
 
+// Détecte les noms de clubs : parenthèses, suffixes club connus, codes pays 3 lettres
+const CLUB_RE = /[()（）]|\b(FC|SC|AC|CF|SL|BSC|UNAM)\b|\([A-Z]{3}\)/
+
 /**
  * Retourne le paragraphe le plus proche en distance euclidienne du centre
- * du bloc kg, en excluant les blocs bruyants et ceux de moins de 4 caractères.
+ * du bloc kg, en excluant les blocs bruyants, les noms de clubs et ceux
+ * de moins de 4 caractères.
  */
 function fallbackNameBlock(
   allParas: Para[],
@@ -71,6 +75,7 @@ function fallbackNameBlock(
   for (const p of allParas) {
     if (p === kgPara) continue
     if (NOISE_RE.test(p.text)) continue
+    if (CLUB_RE.test(p.text)) continue
     if (p.text.trim().length < 4) continue
 
     const dist = Math.sqrt(
