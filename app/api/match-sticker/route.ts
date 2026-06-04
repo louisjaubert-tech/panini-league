@@ -188,6 +188,7 @@ export async function POST(request: NextRequest) {
     confidence: number
     status: 'matched' | 'needs_review' | 'unmatched'
     is_duplicate: boolean
+    insert_error?: string
   }
 
   const results: ResultRow[] = []
@@ -209,18 +210,30 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Insérer dans scanned_stickers ─────────────────────
-    const { error: scanErr } = await supabaseAdmin
+    const insertPayload = {
+      pack_id,
+      user_id,
+      sticker_id:   status !== 'unmatched' ? sticker_id : null,
+      is_duplicate: status === 'matched' ? is_duplicate : false,
+      confidence,
+    }
+
+    console.log('[match-sticker] insert scanned_stickers →', JSON.stringify(insertPayload))
+
+    const { data: scanData, error: scanErr } = await supabaseAdmin
       .from('scanned_stickers')
-      .insert({
-        pack_id,
-        user_id,
-        sticker_id:   status !== 'unmatched' ? sticker_id : null,
-        is_duplicate: status === 'matched' ? is_duplicate : false,
-        confidence,
-      })
+      .insert(insertPayload)
+      .select()
 
     if (scanErr) {
-      console.error('[match-sticker] scanned_stickers insert:', scanErr.message)
+      console.error('[match-sticker] scanned_stickers insert FAILED:', {
+        message: scanErr.message,
+        details: scanErr.details,
+        hint:    scanErr.hint,
+        code:    scanErr.code,
+      })
+    } else {
+      console.log('[match-sticker] scanned_stickers insert OK →', JSON.stringify(scanData))
     }
 
     // ── Upsert user_collection si confiance >= 0.85 ───────
@@ -250,7 +263,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    results.push({ sticker_id, display_name, confidence, status, is_duplicate })
+    results.push({
+      sticker_id,
+      display_name,
+      confidence,
+      status,
+      is_duplicate,
+      ...(scanErr ? { insert_error: `${scanErr.code}: ${scanErr.message}${scanErr.details ? ` — ${scanErr.details}` : ''}` } : {}),
+    })
   }
 
   return NextResponse.json(results)
