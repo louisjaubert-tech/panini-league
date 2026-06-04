@@ -97,6 +97,8 @@ function fallbackNameBlock(
 // ════════════════════════════════════════════════════════════
 
 export async function POST(request: NextRequest) {
+  console.log(`[process-scan] API key prefix: ${process.env.GOOGLE_VISION_API_KEY?.slice(0, 10)}`)
+
   // ── Validation ────────────────────────────────────────────
   let body: { pack_id?: unknown; user_id?: unknown }
   try {
