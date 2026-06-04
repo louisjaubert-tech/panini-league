@@ -239,7 +239,14 @@ export async function POST(request: NextRequest) {
 
   // ── 5. Extraction des blocs "kg" + fallback ───────────────
   const allParas = extractParagraphs(annotation)
-  console.log(`[process-scan] ${allParas.length} paragraphe(s) extrait(s) au total`)
+  console.log(`[process-scan] ── TOUS LES PARAGRAPHES (${allParas.length}) triés par topY ──`)
+  ;[...allParas]
+    .sort((a, b) => a.topY - b.topY)
+    .forEach((p, i) => {
+      const hasKg = /\bkg\b/i.test(p.text)
+      console.log(`[process-scan]   [${String(i).padStart(2)}] topY=${String(p.topY).padStart(4)}${hasKg ? ' ◀KG' : '    '}  "${p.text}"`)
+    })
+  console.log('[process-scan] ─────────────────────────────────────────')
 
   const blocs: string[] = []
 
