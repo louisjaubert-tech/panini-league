@@ -100,17 +100,7 @@ export default async function HomePage() {
           <Link
             key={title}
             href={href}
-            className="block rounded-2xl p-6 text-center transition-all duration-200 hover:scale-[1.03]"
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(220,38,38,0.5)'
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'
-            }}
+            className="block rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center transition-all duration-200 hover:scale-[1.03] hover:border-red-600/50 hover:bg-white/10"
           >
             <div className="mb-3 text-4xl">{emoji}</div>
             <h3 className="mb-2 text-base font-bold" style={{ color: '#ffd60a' }}>
