@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { supabase } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('sb-access-token')?.value
