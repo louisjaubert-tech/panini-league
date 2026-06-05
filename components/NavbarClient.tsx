@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { logout } from '@/app/actions/auth'
 
@@ -31,11 +32,15 @@ export default function NavbarClient({
         <div className="flex h-16 items-center justify-between gap-6">
 
           {/* ── Logo ── */}
-          <Link
-            href="/"
-            className="shrink-0 text-lg font-extrabold tracking-tight text-indigo-600"
-          >
-            Panini League 26
+          <Link href="/" className="shrink-0">
+            <Image
+              src="/logo_panini_club.png"
+              alt="Panini Club"
+              width={40}
+              height={40}
+              className="rounded-lg object-contain"
+              priority
+            />
           </Link>
 
           {/* ── Nav desktop ── */}

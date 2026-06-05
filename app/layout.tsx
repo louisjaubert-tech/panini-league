@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Panini League 26",
+  title: "Panini Club",
   description: "Scanne, collecte et compare ta collection Panini.",
 };
 

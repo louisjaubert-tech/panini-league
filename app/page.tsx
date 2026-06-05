@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { cookies } from 'next/headers'
 import { supabase } from '@/lib/supabase'
 
@@ -15,23 +16,27 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center bg-[#0f0f0f] px-4 py-20 text-white">
+    <main className="flex flex-1 flex-col items-center justify-center px-4 py-20 text-white" style={{ backgroundColor: '#0a1628' }}>
 
-      {/* ── Hero ── */}
+      {/* ── Logo + Hero ── */}
       <div className="mx-auto max-w-3xl text-center">
-        <div className="mb-6 flex justify-center gap-3 text-4xl">
-          <span>⚽</span>
-          <span>🃏</span>
-          <span>🏆</span>
+        <div className="mb-8 flex justify-center">
+          <Image
+            src="/logo_panini_club.png"
+            alt="Panini Club"
+            width={200}
+            height={200}
+            className="rounded-2xl object-contain drop-shadow-2xl"
+            priority
+          />
         </div>
 
         <h1 className="text-5xl font-black tracking-tight sm:text-7xl">
-          <span style={{ color: '#e63946' }}>Panini</span>{' '}
-          <span style={{ color: '#ffd60a' }}>League</span>{' '}
-          <span className="text-white">26</span>
+          <span style={{ color: '#dc2626' }}>Panini</span>{' '}
+          <span style={{ color: '#ffd60a' }}>Club</span>
         </h1>
 
-        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-gray-300 sm:text-xl">
+        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed sm:text-xl" style={{ color: '#94a3b8' }}>
           Qui complétera l&apos;album en premier ?{' '}
           <span className="font-semibold text-white">
             Scanne, collecte, échange
@@ -45,7 +50,7 @@ export default async function HomePage() {
             <Link
               href="/dashboard"
               className="rounded-xl px-8 py-3.5 text-base font-bold transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#e63946', color: '#fff' }}
+              style={{ backgroundColor: '#dc2626', color: '#fff' }}
             >
               Mon dashboard →
             </Link>
@@ -54,13 +59,14 @@ export default async function HomePage() {
               <Link
                 href="/register"
                 className="rounded-xl px-8 py-3.5 text-base font-bold transition-opacity hover:opacity-90"
-                style={{ backgroundColor: '#e63946', color: '#fff' }}
+                style={{ backgroundColor: '#dc2626', color: '#fff' }}
               >
                 S&apos;inscrire
               </Link>
               <Link
                 href="/login"
-                className="rounded-xl border border-white/40 px-8 py-3.5 text-base font-bold text-white transition-colors hover:border-white hover:bg-white/10"
+                className="rounded-xl border px-8 py-3.5 text-base font-bold text-white transition-colors hover:bg-white/10"
+                style={{ borderColor: 'rgba(255,255,255,0.3)' }}
               >
                 Se connecter
               </Link>
@@ -73,20 +79,20 @@ export default async function HomePage() {
       <div className="mx-auto mt-24 grid max-w-3xl grid-cols-1 gap-6 sm:grid-cols-3">
         {[
           {
-            emoji: '📸',
-            title: 'Scanne tes stickers',
-            desc: 'Prends une photo de ton blister et laisse l\'IA reconnaître chaque sticker automatiquement.',
-            href: '/scan',
-          },
-          {
             emoji: '📊',
             title: 'Suis ta collection',
             desc: 'Visualise ta progression, tes doublons et les stickers qu\'il te manque en temps réel.',
             href: '/dashboard',
           },
           {
-            emoji: '🏅',
-            title: 'Défie tes potes',
+            emoji: '📸',
+            title: 'Scanne tes stickers',
+            desc: 'Prends une photo de ton blister et laisse l\'IA reconnaître chaque sticker automatiquement.',
+            href: '/scan',
+          },
+          {
+            emoji: '🏆',
+            title: 'Classement',
             desc: 'Compare ta collection avec tes amis et grimpe dans le classement général.',
             href: '/leaderboard',
           },
@@ -94,16 +100,23 @@ export default async function HomePage() {
           <Link
             key={title}
             href={href}
-            className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center transition-all duration-200 hover:scale-[1.03] hover:border-[#ffd60a]/60 hover:bg-white/10 block"
+            className="block rounded-2xl p-6 text-center transition-all duration-200 hover:scale-[1.03]"
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(220,38,38,0.5)'
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'
+            }}
           >
             <div className="mb-3 text-4xl">{emoji}</div>
-            <h3
-              className="mb-2 text-base font-bold"
-              style={{ color: '#ffd60a' }}
-            >
+            <h3 className="mb-2 text-base font-bold" style={{ color: '#ffd60a' }}>
               {title}
             </h3>
-            <p className="text-sm leading-relaxed text-gray-400">{desc}</p>
+            <p className="text-sm leading-relaxed" style={{ color: '#64748b' }}>{desc}</p>
           </Link>
         ))}
       </div>

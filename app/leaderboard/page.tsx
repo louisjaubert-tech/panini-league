@@ -2,8 +2,8 @@ import LeaderboardClient from './LeaderboardClient'
 import { fetchLeaderboard } from '@/app/actions/leaderboard'
 
 export const metadata = {
-  title: 'Classement — Panini League',
-  description: 'Classement des collectionneurs Panini League',
+  title: 'Classement — Panini Club',
+  description: 'Classement des collectionneurs Panini Club',
 }
 
 export default async function LeaderboardPage() {

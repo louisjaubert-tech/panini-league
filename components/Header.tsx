@@ -7,7 +7,7 @@ export default function Header() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <Link href="/dashboard" className="text-lg font-bold text-indigo-600">
-            Panini League
+            Panini Club
           </Link>
 
           <form action={logout}>
