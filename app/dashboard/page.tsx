@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            Bonjour, {username} 👋
+            Mes stats 👋 {username}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
             Voici l&apos;état de ta collection en temps réel.

@@ -76,17 +76,23 @@ export default async function HomePage() {
       </div>
 
       {/* ── Features ── */}
-      <div className="mx-auto mt-24 grid max-w-3xl grid-cols-1 gap-6 sm:grid-cols-3">
+      <div className="mx-auto mt-24 grid max-w-4xl grid-cols-2 gap-6 sm:grid-cols-4">
         {[
           {
             emoji: '📊',
-            title: 'Suis ta collection',
+            title: 'Mes stats',
             desc: 'Visualise ta progression, tes doublons et les stickers qu\'il te manque en temps réel.',
             href: '/dashboard',
           },
           {
+            emoji: '🃏',
+            title: 'Ma collection',
+            desc: 'Parcours ta collection pays par pays et découvre ce qu\'il te manque.',
+            href: '/collection',
+          },
+          {
             emoji: '📸',
-            title: 'Scanne tes stickers',
+            title: 'Scanner',
             desc: 'Prends une photo de ton blister et laisse l\'IA reconnaître chaque sticker automatiquement.',
             href: '/scan',
           },

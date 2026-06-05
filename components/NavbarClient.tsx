@@ -7,10 +7,10 @@ import { usePathname } from 'next/navigation'
 import { logout } from '@/app/actions/auth'
 
 const NAV_LINKS = [
-  { href: '/dashboard',  label: 'Dashboard'  },
-  { href: '/collection', label: 'Collection' },
-  { href: '/scan',       label: 'Scanner'    },
-  { href: '/leaderboard', label: 'Classement' },
+  { href: '/dashboard',   label: 'Mes stats'      },
+  { href: '/collection',  label: 'Ma collection'  },
+  { href: '/scan',        label: 'Scanner'        },
+  { href: '/leaderboard', label: 'Classement'     },
 ]
 
 export default function NavbarClient({
