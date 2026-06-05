@@ -25,6 +25,9 @@ export async function createLeague(
   name: string
 ): Promise<{ league_id: string } | { error: string }> {
   const userId = await getAuthUserId()
+  console.log('[leagues] supabase url:', process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 30))
+  console.log('[leagues] service key prefix:', process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 20))
+
   if (!userId) return { error: 'Non authentifié.' }
 
   if (!name || name.trim().length < 2) {
