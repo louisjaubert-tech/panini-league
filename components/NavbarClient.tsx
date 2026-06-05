@@ -7,8 +7,9 @@ import { usePathname } from 'next/navigation'
 import { logout } from '@/app/actions/auth'
 
 const NAV_LINKS = [
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/scan',      label: 'Scanner'   },
+  { href: '/dashboard',  label: 'Dashboard'  },
+  { href: '/collection', label: 'Collection' },
+  { href: '/scan',       label: 'Scanner'    },
   { href: '/leaderboard', label: 'Classement' },
 ]
 
