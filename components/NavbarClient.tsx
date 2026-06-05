@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: '/dashboard',   label: 'Mes stats'      },
   { href: '/collection',  label: 'Ma collection'  },
   { href: '/scan',        label: 'Scanner'        },
+  { href: '/leagues',     label: 'Ligues'         },
   { href: '/leaderboard', label: 'Classement'     },
 ]
 
