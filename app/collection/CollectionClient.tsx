@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { getContinent } from '@/lib/continents'
 
 export type StickerItem = {
   sticker_id: string
@@ -17,71 +18,6 @@ export type CountryData = {
   stickers: StickerItem[]
 }
 
-// ── Mapping pays → continent ────────────────────────────────
-
-const CONTINENT_MAP: Record<string, string> = {
-  // Europe
-  Albania: 'Europe', Andorra: 'Europe', Armenia: 'Europe', Austria: 'Europe',
-  Azerbaijan: 'Europe', Belarus: 'Europe', Belgium: 'Europe',
-  'Bosnia and Herzegovina': 'Europe', Bulgaria: 'Europe', Croatia: 'Europe',
-  Cyprus: 'Europe', Czechia: 'Europe', 'Czech Republic': 'Europe',
-  Denmark: 'Europe', England: 'Europe', Estonia: 'Europe',
-  'Faroe Islands': 'Europe', Finland: 'Europe', France: 'Europe',
-  Georgia: 'Europe', Germany: 'Europe', Gibraltar: 'Europe', Greece: 'Europe',
-  Hungary: 'Europe', Iceland: 'Europe', Ireland: 'Europe', Israel: 'Europe',
-  Italy: 'Europe', Kazakhstan: 'Europe', Kosovo: 'Europe', Latvia: 'Europe',
-  Liechtenstein: 'Europe', Lithuania: 'Europe', Luxembourg: 'Europe',
-  Malta: 'Europe', Moldova: 'Europe', Montenegro: 'Europe',
-  Netherlands: 'Europe', 'North Macedonia': 'Europe',
-  'Northern Ireland': 'Europe', Norway: 'Europe', Poland: 'Europe',
-  Portugal: 'Europe', Romania: 'Europe', Russia: 'Europe',
-  'San Marino': 'Europe', Scotland: 'Europe', Serbia: 'Europe',
-  Slovakia: 'Europe', Slovenia: 'Europe', Spain: 'Europe', Sweden: 'Europe',
-  Switzerland: 'Europe', 'Türkiye': 'Europe', Turkey: 'Europe',
-  Ukraine: 'Europe', Wales: 'Europe',
-  // Amérique
-  Argentina: 'Amérique', Bolivia: 'Amérique', Brazil: 'Amérique',
-  Canada: 'Amérique', Chile: 'Amérique', Colombia: 'Amérique',
-  'Costa Rica': 'Amérique', Cuba: 'Amérique', 'Dominican Republic': 'Amérique',
-  Ecuador: 'Amérique', 'El Salvador': 'Amérique', Guatemala: 'Amérique',
-  Haiti: 'Amérique', Honduras: 'Amérique', Jamaica: 'Amérique',
-  Mexico: 'Amérique', Nicaragua: 'Amérique', Panama: 'Amérique',
-  Paraguay: 'Amérique', Peru: 'Amérique', 'Puerto Rico': 'Amérique',
-  'Trinidad and Tobago': 'Amérique', USA: 'Amérique', Uruguay: 'Amérique',
-  Venezuela: 'Amérique', Curaçao: 'Amérique',
-  // Asie
-  Afghanistan: 'Asie', Bahrain: 'Asie', Bangladesh: 'Asie', China: 'Asie',
-  India: 'Asie', Indonesia: 'Asie', Iran: 'Asie', Iraq: 'Asie',
-  Japan: 'Asie', Jordan: 'Asie', Kuwait: 'Asie', Lebanon: 'Asie',
-  Malaysia: 'Asie', Myanmar: 'Asie', Nepal: 'Asie',
-  'North Korea': 'Asie', Oman: 'Asie', Pakistan: 'Asie',
-  Palestine: 'Asie', Philippines: 'Asie', Qatar: 'Asie',
-  'Saudi Arabia': 'Asie', Singapore: 'Asie', 'South Korea': 'Asie',
-  Syria: 'Asie', Taiwan: 'Asie', Tajikistan: 'Asie', Thailand: 'Asie',
-  'United Arab Emirates': 'Asie', Uzbekistan: 'Asie', Vietnam: 'Asie',
-  Yemen: 'Asie',
-  // Afrique
-  Algeria: 'Afrique', Angola: 'Afrique', Benin: 'Afrique',
-  Burkina: 'Afrique', Cameroon: 'Afrique', 'Cape Verde': 'Afrique',
-  'Congo DR': 'Afrique', Egypt: 'Afrique', Ethiopia: 'Afrique',
-  Gabon: 'Afrique', Ghana: 'Afrique', Guinea: 'Afrique',
-  'Ivory Coast': 'Afrique', Kenya: 'Afrique', Libya: 'Afrique',
-  Madagascar: 'Afrique', Mali: 'Afrique', Mauritania: 'Afrique',
-  Morocco: 'Afrique', Mozambique: 'Afrique', Namibia: 'Afrique',
-  Nigeria: 'Afrique', Rwanda: 'Afrique', Senegal: 'Afrique',
-  'Sierra Leone': 'Afrique', Somalia: 'Afrique', 'South Africa': 'Afrique',
-  Sudan: 'Afrique', Tanzania: 'Afrique', Togo: 'Afrique',
-  Tunisia: 'Afrique', Uganda: 'Afrique', Zambia: 'Afrique',
-  Zimbabwe: 'Afrique',
-  // Océanie
-  Australia: 'Océanie', Fiji: 'Océanie', 'New Zealand': 'Océanie',
-  'Papua New Guinea': 'Océanie', Samoa: 'Océanie', Tonga: 'Océanie',
-  Vanuatu: 'Océanie',
-}
-
-export function getContinent(country: string): string {
-  return CONTINENT_MAP[country] ?? 'Autre'
-}
 
 const CONTINENTS = ['Tous', 'Europe', 'Amérique', 'Asie', 'Afrique', 'Océanie']
 

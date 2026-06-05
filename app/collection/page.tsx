@@ -2,7 +2,8 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import CollectionClient, { type CountryData, getContinent } from './CollectionClient'
+import CollectionClient, { type CountryData } from './CollectionClient'
+import { getContinent } from '@/lib/continents'
 
 // Pays à exclure du classement (stickers spéciaux, badges, etc.)
 const EXCLUDED_COUNTRIES = new Set(['Special', 'FIFA World Cup'])
