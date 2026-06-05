@@ -76,21 +76,25 @@ export default async function HomePage() {
             emoji: '📸',
             title: 'Scanne tes stickers',
             desc: 'Prends une photo de ton blister et laisse l\'IA reconnaître chaque sticker automatiquement.',
+            href: '/scan',
           },
           {
             emoji: '📊',
             title: 'Suis ta collection',
             desc: 'Visualise ta progression, tes doublons et les stickers qu\'il te manque en temps réel.',
+            href: '/dashboard',
           },
           {
             emoji: '🏅',
             title: 'Défie tes potes',
             desc: 'Compare ta collection avec tes amis et grimpe dans le classement général.',
+            href: '/leaderboard',
           },
-        ].map(({ emoji, title, desc }) => (
-          <div
+        ].map(({ emoji, title, desc, href }) => (
+          <Link
             key={title}
-            className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center"
+            href={href}
+            className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center transition-all duration-200 hover:scale-[1.03] hover:border-[#ffd60a]/60 hover:bg-white/10 block"
           >
             <div className="mb-3 text-4xl">{emoji}</div>
             <h3
@@ -100,7 +104,7 @@ export default async function HomePage() {
               {title}
             </h3>
             <p className="text-sm leading-relaxed text-gray-400">{desc}</p>
-          </div>
+          </Link>
         ))}
       </div>
     </main>

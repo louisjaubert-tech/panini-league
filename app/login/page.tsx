@@ -1,11 +1,33 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useRef, useState } from 'react'
 import Link from 'next/link'
 import { login } from '@/app/actions/auth'
+import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
   const [state, action, pending] = useActionState(login, {})
+  const emailRef = useRef<HTMLInputElement>(null)
+  const [resetStatus, setResetStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle')
+  const [resetMsg, setResetMsg] = useState('')
+
+  async function handleResetPassword() {
+    const email = emailRef.current?.value.trim()
+    if (!email) {
+      setResetStatus('error')
+      setResetMsg('Entrez votre email d\'abord.')
+      return
+    }
+    setResetStatus('loading')
+    const { error } = await supabase.auth.resetPasswordForEmail(email)
+    if (error) {
+      setResetStatus('error')
+      setResetMsg(error.message)
+    } else {
+      setResetStatus('sent')
+      setResetMsg('Un email de réinitialisation a été envoyé.')
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -33,6 +55,7 @@ export default function LoginPage() {
                 Email
               </label>
               <input
+                ref={emailRef}
                 id="email"
                 name="email"
                 type="email"
@@ -44,9 +67,19 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Mot de passe
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Mot de passe
+                </label>
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  disabled={resetStatus === 'loading'}
+                  className="text-xs text-indigo-600 hover:text-indigo-500 disabled:opacity-50 transition-colors"
+                >
+                  {resetStatus === 'loading' ? 'Envoi…' : 'Mot de passe oublié ?'}
+                </button>
+              </div>
               <input
                 id="password"
                 name="password"
@@ -56,6 +89,12 @@ export default function LoginPage() {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 placeholder="••••••••"
               />
+              {resetStatus === 'sent' && (
+                <p className="mt-1.5 text-xs text-green-600">{resetMsg}</p>
+              )}
+              {resetStatus === 'error' && (
+                <p className="mt-1.5 text-xs text-red-600">{resetMsg}</p>
+              )}
             </div>
 
             <button
