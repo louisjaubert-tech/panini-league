@@ -273,6 +273,7 @@ export async function POST(request: NextRequest) {
 
   const fullText: string = annotation?.fullTextAnnotation?.text ?? ''
   console.log(`[scan-process] texte brut reçu : ${fullText.length} caractères`)
+  console.log(`[scan-process] texte brut CONTENU : ${fullText.replace(/\n/g, ' | ')}`)
 
   // ── 5. Extraction des blocs "kg" + fallback ───────────────
   const allParas = extractParagraphs(annotation)
