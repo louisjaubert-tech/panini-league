@@ -103,67 +103,39 @@ export default function DashboardClient({
         </div>
       )}
 
-      {/* ── Stats ── */}
-      <section>
-        <h2 className="mb-4 text-lg font-semibold text-gray-700">Ma collection</h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            label="Cartes uniques"
-            value={uniqueCards}
-            sub={`sur ${totalReference} au total`}
-            colorClass="bg-indigo-600 text-white"
-            icon={
-              <svg className="h-6 w-6 opacity-80" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
-              </svg>
-            }
-          />
-          <StatCard
-            label="Album complété"
-            value={`${completionPct} %`}
-            colorClass="bg-emerald-500 text-white"
-            icon={
-              <svg className="h-6 w-6 opacity-80" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-          />
-          <StatCard
-            label="Doublons"
-            value={duplicates}
-            colorClass="bg-amber-400 text-white"
-            icon={
-              <svg className="h-6 w-6 opacity-80" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
-              </svg>
-            }
-          />
-          <StatCard
-            label="Pays représentés"
-            value={countries}
-            colorClass="bg-sky-500 text-white"
-            icon={
-              <svg className="h-6 w-6 opacity-80" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
-              </svg>
-            }
-          />
-        </div>
-      </section>
-
       {/* ── Barre de progression ── */}
-      <section>
+      <section className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-600">Progression album</span>
-          <span className="text-sm font-semibold text-indigo-600">{completionPct} %</span>
+          <span className="text-sm font-medium text-gray-300">Progression album</span>
+          <span className="text-sm font-bold tabular-nums" style={{ color: completionPct >= 50 ? '#ffd60a' : '#e5e7eb' }}>
+            {completionPct} %
+          </span>
         </div>
-        <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200">
+        <div className="h-3 w-full overflow-hidden rounded-full bg-white/10">
           <div
-            className="h-full rounded-full bg-indigo-600 transition-all duration-700"
+            className={`h-full rounded-full transition-all duration-700 ${completionPct >= 50 ? 'bg-yellow-400' : 'bg-red-500'}`}
             style={{ width: `${completionPct}%` }}
           />
         </div>
-        <p className="mt-1 text-xs text-gray-400">{uniqueCards} / {totalReference} cartes</p>
+        <p className="mt-2 text-xs text-gray-400 tabular-nums">{uniqueCards} / {totalReference} stickers</p>
+      </section>
+
+      {/* ── 3 petits carrés stats ── */}
+      <section>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center">
+            <p className="text-xs font-medium text-gray-400 mb-1">Doublons</p>
+            <p className="text-2xl font-bold text-white">{duplicates}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center">
+            <p className="text-xs font-medium text-gray-400 mb-1">Pays</p>
+            <p className="text-2xl font-bold text-white">{countries}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center">
+            <p className="text-xs font-medium text-gray-400 mb-1">Badges</p>
+            <p className="text-2xl font-bold text-white">{recentBadges.length}</p>
+          </div>
+        </div>
       </section>
 
       <div className="grid gap-8 lg:grid-cols-2">
