@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { getContinent } from '@/lib/continents'
-import { TOTAL_STICKERS } from '@/lib/stats'
 
 export type StickerItem = {
   sticker_id: string
@@ -92,16 +91,24 @@ function CountryRow({ data }: { data: CountryData }) {
 
 // ── Composant principal client ───────────────────────────────
 
-export default function CollectionClient({ countries }: { countries: CountryData[] }) {
+type GlobalStats = { unique: number; total: number; percentage: number }
+
+export default function CollectionClient({
+  countries,
+  globalStats,
+}: {
+  countries: CountryData[]
+  globalStats: GlobalStats
+}) {
   const [activeContinent, setActiveContinent] = useState('Tous')
 
   const filtered = activeContinent === 'Tous'
     ? countries
     : countries.filter((c) => c.continent === activeContinent)
 
-  const totalOwned = countries.reduce((s, c) => s + c.ownedCount, 0)
-  const totalRef   = TOTAL_STICKERS
-  const globalPct  = parseFloat(((totalOwned / TOTAL_STICKERS) * 100).toFixed(1))
+  const totalOwned = globalStats.unique
+  const totalRef   = globalStats.total
+  const globalPct  = globalStats.percentage
 
   return (
     <div className="space-y-6">

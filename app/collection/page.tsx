@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import CollectionClient, { type CountryData } from './CollectionClient'
 import { getContinent } from '@/lib/continents'
+import { getUserStats } from '@/lib/stats'
 
 // Pays à exclure du classement (stickers spéciaux, badges, etc.)
 const EXCLUDED_COUNTRIES = new Set(['Special', 'FIFA World Cup'])
@@ -18,7 +19,8 @@ export default async function CollectionPage() {
   if (authError || !user) redirect('/login')
 
   // ── Fetch données ─────────────────────────────────────────────
-  const [refResult, collectionResult] = await Promise.all([
+  const [globalStats, refResult, collectionResult] = await Promise.all([
+    getUserStats(user.id),
     supabaseAdmin
       .from('stickers_reference')
       .select('sticker_id, display_name, country'),
@@ -97,7 +99,7 @@ export default async function CollectionPage() {
           </p>
         </div>
 
-        <CollectionClient countries={countries} />
+        <CollectionClient countries={countries} globalStats={globalStats} />
       </div>
     </main>
   )
