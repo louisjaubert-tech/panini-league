@@ -22,7 +22,7 @@ export default async function HomePage() {
       <div className="mx-auto max-w-3xl text-center">
         <div className="mb-3 flex justify-center">
           <Image
-            src="/logo_panini_club_2.png"
+            src="/logo_panini_club_3.png"
             alt="Panini Club"
             width={140}
             height={140}

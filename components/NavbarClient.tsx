@@ -54,10 +54,10 @@ export default function NavbarClient({
         <div className="flex h-16 items-center gap-4">
 
           {/* ── Gauche : Logo + ScanPhoto ── */}
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-8">
             <Link href="/">
               <Image
-                src="/logo_panini_club_2.png"
+                src="/logo_panini_club_3.png"
                 alt="Panini Club"
                 width={40}
                 height={40}
