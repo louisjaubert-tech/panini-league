@@ -56,16 +56,14 @@ export default function NavbarClient({
           {/* ── Gauche : Logo + ScanPhoto ── */}
           <div className="flex shrink-0 items-center gap-8">
             <Link href="/">
-              <div className="bg-[#0a1628] rounded-lg p-1">
-                <Image
-                  src="/logo_panini_club_3.png"
-                  alt="Panini Club"
-                  width={40}
-                  height={40}
-                  className="object-contain"
-                  priority
-                />
-              </div>
+              <Image
+                src="/paninilogosansfond.png"
+                alt="Panini Club"
+                width={40}
+                height={40}
+                className="object-contain"
+                priority
+              />
             </Link>
             <Link
               href="/scan"

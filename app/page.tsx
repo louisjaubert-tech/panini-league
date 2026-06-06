@@ -21,16 +21,14 @@ export default async function HomePage() {
       {/* ── Logo + Hero ── */}
       <div className="mx-auto max-w-3xl text-center">
         <div className="mb-3 flex justify-center">
-          <div className="bg-[#0a1628] rounded-lg p-1">
-            <Image
-              src="/logo_panini_club_3.png"
-              alt="Panini Club"
-              width={140}
-              height={140}
-              className="object-contain drop-shadow-2xl"
-              priority
-            />
-          </div>
+          <Image
+            src="/paninilogosansfond.png"
+            alt="Panini Club"
+            width={140}
+            height={140}
+            className="object-contain drop-shadow-2xl"
+            priority
+          />
         </div>
 
         <h1 className="text-4xl font-black tracking-tight sm:text-5xl">
