@@ -1,17 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { logout } from '@/app/actions/auth'
 
-const NAV_LINKS = [
-  { href: '/dashboard',   label: 'Mes stats',    separator: false },
-  { href: '/collection',  label: 'Ma collection', separator: false },
-  { href: '/scan',        label: '📷 ScanPhoto',  separator: true  },
-  { href: '/leagues',     label: 'Ligues',        separator: false },
-  { href: '/leaderboard', label: 'Classement',    separator: false },
+const CENTER_LINKS = [
+  { href: '/dashboard',   label: 'Mes stats'     },
+  { href: '/collection',  label: 'Ma collection' },
+  { href: '/leagues',     label: 'Ligues'        },
+  { href: '/leaderboard', label: 'Classement'    },
+]
+
+const MOBILE_LINKS = [
+  { href: '/scan',        label: '📷 ScanPhoto'  },
+  { href: '/dashboard',   label: 'Mes stats'     },
+  { href: '/collection',  label: 'Ma collection' },
+  { href: '/leagues',     label: 'Ligues'        },
+  { href: '/leaderboard', label: 'Classement'    },
 ]
 
 export default function NavbarClient({
@@ -21,123 +28,159 @@ export default function NavbarClient({
   isLoggedIn: boolean
   username: string
 }) {
-  const [open, setOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + '/')
   }
 
+  // Fermer le dropdown en cliquant ailleurs
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0a1628]/95 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between gap-6">
+        <div className="flex h-16 items-center gap-4">
 
-          {/* ── Logo ── */}
-          <Link href="/" className="shrink-0">
-            <Image
-              src="/logo_panini_club.png"
-              alt="Panini Club"
-              width={40}
-              height={40}
-              className="rounded-full object-contain"
-              priority
-            />
-          </Link>
+          {/* ── Gauche : Logo + ScanPhoto ── */}
+          <div className="flex shrink-0 items-center gap-3">
+            <Link href="/">
+              <Image
+                src="/logo_panini_club_2.png"
+                alt="Panini Club"
+                width={40}
+                height={40}
+                className="object-contain"
+                priority
+              />
+            </Link>
+            <Link
+              href="/scan"
+              className={`hidden sm:block rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                isActive('/scan')
+                  ? 'bg-red-600 text-white'
+                  : 'bg-red-600/20 text-red-300 hover:bg-red-600/40 hover:text-white'
+              }`}
+            >
+              📷 ScanPhoto
+            </Link>
+          </div>
 
-          {/* ── Nav desktop ── */}
-          <nav className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map(({ href, label, separator }) => (
-              <span key={href} className="flex items-center gap-1">
-                {separator && (
-                  <span className="mx-1 h-4 w-px bg-white/20" aria-hidden="true" />
-                )}
-                <Link
-                  href={href}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                    isActive(href)
-                      ? 'bg-white/15 text-white'
-                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  {label}
-                </Link>
-              </span>
+          {/* ── Centre : liens navigation ── */}
+          <nav className="hidden md:flex flex-1 items-center justify-center gap-1">
+            {CENTER_LINKS.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  isActive(href)
+                    ? 'bg-white/15 text-white'
+                    : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {label}
+              </Link>
             ))}
           </nav>
 
-          {/* ── Auth desktop ── */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* ── Droite : profil dropdown ou login ── */}
+          <div className="ml-auto flex shrink-0 items-center gap-3">
             {isLoggedIn ? (
-              <>
-                <span className="text-sm font-medium text-gray-700">{username}</span>
-                <form action={logout}>
-                  <button
-                    type="submit"
-                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setDropdownOpen((o) => !o)}
+                  className="hidden md:flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  <span>{username}</span>
+                  <svg
+                    className={`h-3.5 w-3.5 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
+                    fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"
                   >
-                    Déconnexion
-                  </button>
-                </form>
-              </>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-40 rounded-xl border border-white/10 bg-[#0a1628] shadow-xl">
+                    <form action={logout}>
+                      <button
+                        type="submit"
+                        className="w-full rounded-xl px-4 py-2.5 text-left text-sm text-red-400 hover:bg-white/5 hover:text-red-300 transition-colors"
+                      >
+                        Déconnexion
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </div>
             ) : (
-              <>
+              <div className="hidden md:flex items-center gap-2">
                 <Link
                   href="/login"
-                  className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
                 >
                   Connexion
                 </Link>
                 <Link
                   href="/register"
-                  className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
+                  className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: '#dc2626' }}
                 >
                   S&apos;inscrire
                 </Link>
-              </>
+              </div>
             )}
-          </div>
 
-          {/* ── Hamburger mobile ── */}
-          <button
-            type="button"
-            onClick={() => setOpen((o) => !o)}
-            aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
-            aria-expanded={open}
-            className="inline-flex md:hidden items-center justify-center rounded-lg p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
-          >
-            {open ? (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-              </svg>
-            )}
-          </button>
+            {/* ── Hamburger mobile ── */}
+            <button
+              type="button"
+              onClick={() => setMobileOpen((o) => !o)}
+              aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+              className="inline-flex md:hidden items-center justify-center rounded-lg p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              {mobileOpen ? (
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* ── Menu mobile ── */}
-      {open && (
+      {mobileOpen && (
         <div className="border-t border-white/10 bg-[#0a1628] md:hidden">
           <nav className="flex flex-col px-4 py-3 gap-1">
-            {NAV_LINKS.map(({ href, label, separator }) => (
-              <span key={href}>
-                {separator && <div className="my-1 h-px bg-white/10" />}
-                <Link
-                  href={href}
-                  onClick={() => setOpen(false)}
-                  className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive(href)
-                      ? 'bg-white/15 text-white'
-                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  {label}
-                </Link>
-              </span>
+            {MOBILE_LINKS.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className={`rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isActive(href)
+                    ? 'bg-white/15 text-white'
+                    : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {label}
+              </Link>
             ))}
           </nav>
           <div className="border-t border-white/10 px-4 py-3">
@@ -147,7 +190,7 @@ export default function NavbarClient({
                 <form action={logout}>
                   <button
                     type="submit"
-                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="rounded-lg px-3 py-1.5 text-sm font-medium text-red-400 hover:text-red-300 transition-colors"
                   >
                     Déconnexion
                   </button>
@@ -157,15 +200,16 @@ export default function NavbarClient({
               <div className="flex gap-3">
                 <Link
                   href="/login"
-                  onClick={() => setOpen(false)}
-                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex-1 rounded-lg border border-white/20 px-3 py-2 text-center text-sm font-medium text-gray-300 hover:bg-white/10 transition-colors"
                 >
                   Connexion
                 </Link>
                 <Link
                   href="/register"
-                  onClick={() => setOpen(false)}
-                  className="flex-1 rounded-lg bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex-1 rounded-lg px-3 py-2 text-center text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: '#dc2626' }}
                 >
                   S&apos;inscrire
                 </Link>

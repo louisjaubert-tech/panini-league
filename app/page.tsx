@@ -16,27 +16,27 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-4 py-20 text-white" style={{ backgroundColor: '#0a1628' }}>
+    <main className="flex flex-1 flex-col items-center justify-center px-4 py-8 text-white" style={{ backgroundColor: '#0a1628' }}>
 
       {/* ── Logo + Hero ── */}
       <div className="mx-auto max-w-3xl text-center">
-        <div className="mb-8 flex justify-center">
+        <div className="mb-3 flex justify-center">
           <Image
-            src="/logo_panini_club.png"
+            src="/logo_panini_club_2.png"
             alt="Panini Club"
-            width={200}
-            height={200}
-            className="rounded-full object-contain drop-shadow-2xl"
+            width={140}
+            height={140}
+            className="object-contain drop-shadow-2xl"
             priority
           />
         </div>
 
-        <h1 className="text-5xl font-black tracking-tight sm:text-7xl">
+        <h1 className="text-4xl font-black tracking-tight sm:text-5xl">
           <span style={{ color: '#dc2626' }}>Panini</span>{' '}
           <span style={{ color: '#ffd60a' }}>Club</span>
         </h1>
 
-        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed sm:text-xl" style={{ color: '#94a3b8' }}>
+        <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed sm:text-lg" style={{ color: '#94a3b8' }}>
           Qui complétera l&apos;album en premier ?{' '}
           <span className="font-semibold text-white">
             Scanne, collecte, échange
@@ -45,7 +45,7 @@ export default async function HomePage() {
         </p>
 
         {/* ── CTA ── */}
-        <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+        <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
           {isLoggedIn ? (
             <Link
               href="/dashboard"
@@ -76,7 +76,7 @@ export default async function HomePage() {
       </div>
 
       {/* ── Features ── */}
-      <div className="mx-auto mt-24 grid max-w-4xl grid-cols-2 gap-6 sm:grid-cols-4">
+      <div className="mx-auto mt-8 grid max-w-4xl grid-cols-2 gap-4 sm:grid-cols-4">
         {[
           {
             emoji: '📊',
