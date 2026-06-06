@@ -26,7 +26,7 @@ export default async function HomePage() {
             alt="Panini Club"
             width={200}
             height={200}
-            className="rounded-2xl object-contain drop-shadow-2xl"
+            className="rounded-full object-contain drop-shadow-2xl"
             priority
           />
         </div>
@@ -81,7 +81,7 @@ export default async function HomePage() {
           {
             emoji: '📊',
             title: 'Mes stats',
-            desc: 'Visualise ta progression, tes doublons et les stickers qu\'il te manque en temps réel.',
+            desc: 'Visualise ta progression, tes doublons et ton taux de complétion.',
             href: '/dashboard',
           },
           {

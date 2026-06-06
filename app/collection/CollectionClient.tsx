@@ -91,50 +91,15 @@ function CountryRow({ data }: { data: CountryData }) {
 
 // ── Composant principal client ───────────────────────────────
 
-type GlobalStats = { unique: number; total: number; percentage: number }
-
-export default function CollectionClient({
-  countries,
-  globalStats,
-}: {
-  countries: CountryData[]
-  globalStats: GlobalStats
-}) {
+export default function CollectionClient({ countries }: { countries: CountryData[] }) {
   const [activeContinent, setActiveContinent] = useState('Tous')
 
   const filtered = activeContinent === 'Tous'
     ? countries
     : countries.filter((c) => c.continent === activeContinent)
 
-  const totalOwned = globalStats.unique
-  const totalRef   = globalStats.total
-  const globalPct  = globalStats.percentage
-
   return (
     <div className="space-y-6">
-      {/* Stats globales */}
-      <div className="rounded-xl border border-white/10 bg-white/5 px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <p className="text-sm text-gray-400">Collection globale</p>
-          <p className="text-2xl font-bold text-white">
-            {totalOwned}
-            <span className="text-sm font-normal text-gray-400 ml-1">/ {totalRef} stickers</span>
-          </p>
-        </div>
-        <div className="flex-1 max-w-xs">
-          <div className="flex justify-between text-xs text-gray-400 mb-1">
-            <span>Progression</span>
-            <span style={{ color: '#ffd60a' }}>{globalPct}%</span>
-          </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-red-500 transition-all duration-700"
-              style={{ width: `${globalPct}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Filtres continent */}
       <div className="flex flex-wrap gap-2">
         {CONTINENTS.map((c) => (

@@ -7,11 +7,11 @@ import { usePathname } from 'next/navigation'
 import { logout } from '@/app/actions/auth'
 
 const NAV_LINKS = [
-  { href: '/dashboard',   label: 'Mes stats'      },
-  { href: '/collection',  label: 'Ma collection'  },
-  { href: '/scan',        label: 'Scanner'        },
-  { href: '/leagues',     label: 'Ligues'         },
-  { href: '/leaderboard', label: 'Classement'     },
+  { href: '/dashboard',   label: 'Mes stats',    separator: false },
+  { href: '/collection',  label: 'Ma collection', separator: false },
+  { href: '/scan',        label: '📷 ScanPhoto',  separator: true  },
+  { href: '/leagues',     label: 'Ligues',        separator: false },
+  { href: '/leaderboard', label: 'Classement',    separator: false },
 ]
 
 export default function NavbarClient({
@@ -29,7 +29,7 @@ export default function NavbarClient({
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0a1628]/95 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-6">
 
@@ -40,25 +40,29 @@ export default function NavbarClient({
               alt="Panini Club"
               width={40}
               height={40}
-              className="rounded-lg object-contain"
+              className="rounded-full object-contain"
               priority
             />
           </Link>
 
           {/* ── Nav desktop ── */}
           <nav className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                  isActive(href)
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                {label}
-              </Link>
+            {NAV_LINKS.map(({ href, label, separator }) => (
+              <span key={href} className="flex items-center gap-1">
+                {separator && (
+                  <span className="mx-1 h-4 w-px bg-white/20" aria-hidden="true" />
+                )}
+                <Link
+                  href={href}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    isActive(href)
+                      ? 'bg-white/15 text-white'
+                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  {label}
+                </Link>
+              </span>
             ))}
           </nav>
 
@@ -100,7 +104,7 @@ export default function NavbarClient({
             onClick={() => setOpen((o) => !o)}
             aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
             aria-expanded={open}
-            className="inline-flex md:hidden items-center justify-center rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+            className="inline-flex md:hidden items-center justify-center rounded-lg p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
           >
             {open ? (
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -117,27 +121,29 @@ export default function NavbarClient({
 
       {/* ── Menu mobile ── */}
       {open && (
-        <div className="border-t border-gray-100 bg-white md:hidden">
+        <div className="border-t border-white/10 bg-[#0a1628] md:hidden">
           <nav className="flex flex-col px-4 py-3 gap-1">
-            {NAV_LINKS.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setOpen(false)}
-                className={`rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive(href)
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                {label}
-              </Link>
+            {NAV_LINKS.map(({ href, label, separator }) => (
+              <span key={href}>
+                {separator && <div className="my-1 h-px bg-white/10" />}
+                <Link
+                  href={href}
+                  onClick={() => setOpen(false)}
+                  className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive(href)
+                      ? 'bg-white/15 text-white'
+                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  {label}
+                </Link>
+              </span>
             ))}
           </nav>
-          <div className="border-t border-gray-100 px-4 py-3">
+          <div className="border-t border-white/10 px-4 py-3">
             {isLoggedIn ? (
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">{username}</span>
+                <span className="text-sm font-medium text-gray-300">{username}</span>
                 <form action={logout}>
                   <button
                     type="submit"
