@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers'
 import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { getUserStats, TOTAL_STICKERS } from '@/lib/stats'
 
 export type Badge = {
   badge_id: string
@@ -41,37 +42,8 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
 
   const uid = user.id
 
-  const [
-    uniqueResult,
-    totalRefResult,
-    duplicatesResult,
-    countriesResult,
-    badgesResult,
-    packsResult,
-  ] = await Promise.all([
-    // Nombre de cartes uniques (une ligne par sticker dans user_collection)
-    supabaseAdmin
-      .from('user_collection')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', uid),
-
-    // Total de la référence
-    supabaseAdmin
-      .from('stickers_reference')
-      .select('*', { count: 'exact', head: true }),
-
-    // Doublons : somme de (quantity - 1) pour les cartes en double
-    supabaseAdmin
-      .from('user_collection')
-      .select('quantity')
-      .eq('user_id', uid)
-      .gt('quantity', 1),
-
-    // Pays distincts présents dans la collection
-    supabaseAdmin
-      .from('user_collection')
-      .select('stickers_reference!inner(country)')
-      .eq('user_id', uid),
+  const [stats, badgesResult, packsResult] = await Promise.all([
+    getUserStats(uid),
 
     // 3 derniers badges
     supabaseAdmin
@@ -97,25 +69,10 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
       .limit(5),
   ])
 
-  const uniqueCards = uniqueResult.count ?? 0
-  const totalReference = totalRefResult.count ?? 0
-  const completionPct =
-    totalReference > 0 ? Math.round((uniqueCards / totalReference) * 100) : 0
-
-  const duplicates =
-    duplicatesResult.data?.reduce(
-      (sum, row) => sum + ((row.quantity as number) - 1),
-      0
-    ) ?? 0
-
-  const countriesSet = new Set<string>()
-  if (countriesResult.data) {
-    for (const row of countriesResult.data) {
-      const raw = row.stickers_reference
-      const ref = (Array.isArray(raw) ? raw[0] : raw) as { country: string } | null
-      if (ref?.country) countriesSet.add(ref.country)
-    }
-  }
+  const uniqueCards   = stats.unique
+  const totalReference = TOTAL_STICKERS
+  const completionPct  = stats.percentage
+  const duplicates     = stats.duplicates
 
   const recentBadges: Badge[] =
     badgesResult.data
@@ -148,7 +105,7 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
     totalReference,
     completionPct,
     duplicates,
-    countries: countriesSet.size,
+    countries: stats.countries,
     recentBadges,
     recentPacks,
   }

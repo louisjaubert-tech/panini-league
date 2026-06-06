@@ -1,6 +1,7 @@
 'use server'
 
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { TOTAL_STICKERS } from '@/lib/stats'
 
 export type LeaderboardRow = {
   rank: number
@@ -13,17 +14,12 @@ export type LeaderboardRow = {
 }
 
 export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
-  const [collectionResult, totalRefResult, badgesResult, profilesResult] =
+  const [collectionResult, badgesResult, profilesResult] =
     await Promise.all([
       // Toutes les cartes de la collection (avec le pays via join)
       supabaseAdmin
         .from('user_collection')
         .select('user_id, sticker_id, stickers_reference!inner(country)'),
-
-      // Total de référence
-      supabaseAdmin
-        .from('stickers_reference')
-        .select('*', { count: 'exact', head: true }),
 
       // Tous les badges
       supabaseAdmin.from('user_badges').select('user_id'),
@@ -42,7 +38,7 @@ export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
     console.error('[leaderboard] profiles:', profilesResult.error.message)
   }
 
-  const totalRef = totalRefResult.count ?? 0
+  const totalRef = TOTAL_STICKERS
 
   // ── Agréger par user ────────────────────────────────────────────────────────
 

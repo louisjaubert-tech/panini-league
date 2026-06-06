@@ -4,8 +4,7 @@ import { redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { CopyButton, LeaveButton } from './LeagueDetailClient'
-
-const TOTAL_STICKERS = 1050
+import { TOTAL_STICKERS } from '@/lib/stats'
 
 type Member = {
   user_id: string

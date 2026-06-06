@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { getContinent } from '@/lib/continents'
+import { TOTAL_STICKERS } from '@/lib/stats'
 
 export type StickerItem = {
   sticker_id: string
@@ -99,8 +100,8 @@ export default function CollectionClient({ countries }: { countries: CountryData
     : countries.filter((c) => c.continent === activeContinent)
 
   const totalOwned = countries.reduce((s, c) => s + c.ownedCount, 0)
-  const totalRef   = countries.reduce((s, c) => s + c.total, 0)
-  const globalPct  = totalRef > 0 ? Math.round((totalOwned / totalRef) * 100) : 0
+  const totalRef   = TOTAL_STICKERS
+  const globalPct  = parseFloat(((totalOwned / TOTAL_STICKERS) * 100).toFixed(1))
 
   return (
     <div className="space-y-6">
