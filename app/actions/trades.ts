@@ -217,3 +217,108 @@ export async function confirmReception(
 
   return { success: true }
 }
+
+// ── confirmDonation ───────────────────────────────────────────────────────────
+// Appelée par le DONNEUR pour confirmer qu'il a physiquement remis des stickers.
+// giverId = current user (cookie), receiverId est passé explicitement.
+
+export type DonationOut = {
+  stickerId: string
+  receiverId: string
+}
+
+export async function confirmDonation(
+  donations: DonationOut[],
+): Promise<{ success: true } | { error: string }> {
+  const giverId = await getAuthUserId()
+  if (!giverId) return { error: 'Non authentifié.' }
+
+  if (!donations || donations.length === 0) return { success: true }
+
+  // Réutilise la même logique que confirmReception mais avec les rôles inversés
+  const mapped: Donation[] = donations.map(({ stickerId, receiverId }) => ({
+    giverId,
+    stickerId,
+    // On passe receiverId dans la liste pour traitement séquentiel ci-dessous
+    _receiverId: receiverId,
+  })) as (Donation & { _receiverId: string })[]
+
+  for (const item of mapped) {
+    const { giverId: giver, stickerId } = item
+    const receiverId = (item as unknown as { _receiverId: string })._receiverId
+
+    // ── Côté donneur ──────────────────────────────────────────────────────────
+    const { data: giverRow, error: fetchErr } = await supabaseAdmin
+      .from('user_collection')
+      .select('quantity')
+      .eq('user_id', giver)
+      .eq('sticker_id', stickerId)
+      .maybeSingle()
+
+    if (fetchErr) {
+      console.error('[trades] confirmDonation fetch giver row:', fetchErr.message)
+      return { error: fetchErr.message }
+    }
+
+    if (giverRow) {
+      const currentQty = (giverRow.quantity as number | null) ?? 1
+      if (currentQty <= 1) {
+        const { error: deleteErr } = await supabaseAdmin
+          .from('user_collection')
+          .delete()
+          .eq('user_id', giver)
+          .eq('sticker_id', stickerId)
+        if (deleteErr) {
+          console.error('[trades] confirmDonation delete giver row:', deleteErr.message)
+          return { error: deleteErr.message }
+        }
+      } else {
+        const { error: updateErr } = await supabaseAdmin
+          .from('user_collection')
+          .update({ quantity: currentQty - 1 })
+          .eq('user_id', giver)
+          .eq('sticker_id', stickerId)
+        if (updateErr) {
+          console.error('[trades] confirmDonation decrement giver:', updateErr.message)
+          return { error: updateErr.message }
+        }
+      }
+    }
+
+    // ── Côté receveur ─────────────────────────────────────────────────────────
+    const { data: receiverRow, error: fetchReceiverErr } = await supabaseAdmin
+      .from('user_collection')
+      .select('quantity')
+      .eq('user_id', receiverId)
+      .eq('sticker_id', stickerId)
+      .maybeSingle()
+
+    if (fetchReceiverErr) {
+      console.error('[trades] confirmDonation fetch receiver row:', fetchReceiverErr.message)
+      return { error: fetchReceiverErr.message }
+    }
+
+    if (receiverRow) {
+      const currentQty = (receiverRow.quantity as number | null) ?? 1
+      const { error: updateErr } = await supabaseAdmin
+        .from('user_collection')
+        .update({ quantity: currentQty + 1 })
+        .eq('user_id', receiverId)
+        .eq('sticker_id', stickerId)
+      if (updateErr) {
+        console.error('[trades] confirmDonation increment receiver:', updateErr.message)
+        return { error: updateErr.message }
+      }
+    } else {
+      const { error: insertErr } = await supabaseAdmin
+        .from('user_collection')
+        .insert({ user_id: receiverId, sticker_id: stickerId, quantity: 1 })
+      if (insertErr) {
+        console.error('[trades] confirmDonation insert receiver:', insertErr.message)
+        return { error: insertErr.message }
+      }
+    }
+  }
+
+  return { success: true }
+}
