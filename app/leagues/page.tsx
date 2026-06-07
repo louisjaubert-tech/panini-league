@@ -110,13 +110,21 @@ export default async function LeaguesPage() {
                       )}
                     </p>
                   </div>
-                  <Link
-                    href={`/leagues/${league.id}`}
-                    className="shrink-0 rounded-lg px-4 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-80"
-                    style={{ backgroundColor: '#dc2626' }}
-                  >
-                    Voir →
-                  </Link>
+                  <div className="shrink-0 flex items-center gap-2">
+                    <Link
+                      href={`/leaderboard?league=${league.id}`}
+                      className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-80"
+                      style={{ backgroundColor: '#dc2626' }}
+                    >
+                      🏆 Classement
+                    </Link>
+                    <Link
+                      href={`/leagues/${league.id}/echanges`}
+                      className="rounded-lg border border-white/20 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                    >
+                      🔄 Échanges
+                    </Link>
+                  </div>
                 </li>
               ))}
             </ul>
