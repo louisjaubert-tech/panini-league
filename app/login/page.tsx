@@ -19,7 +19,9 @@ export default function LoginPage() {
       return
     }
     setResetStatus('loading')
-    const { error } = await supabase.auth.resetPasswordForEmail(email)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://panini-league.vercel.app/reset-password',
+    })
     if (error) {
       setResetStatus('error')
       setResetMsg(error.message)
