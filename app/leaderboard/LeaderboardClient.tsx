@@ -411,9 +411,7 @@ function LeagueTab({
               </div>
               <div className="shrink-0 flex items-center gap-2 text-sm text-gray-500">
                 <span className="flex items-center gap-0.5">{member.badgeCount}<span className="ml-0.5">🏅</span></span>
-                {member.trophyCount > 0 && (
-                  <span className="flex items-center gap-0.5">{member.trophyCount}<span className="ml-0.5">🏆</span></span>
-                )}
+                <span className="flex items-center gap-0.5">{member.trophyCount}<span className="ml-0.5">🏆</span></span>
               </div>
             </li>
           ))}

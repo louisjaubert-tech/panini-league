@@ -16,6 +16,58 @@ export type BadgeWithProgress = {
   obtained_at: string | null
 }
 
+// ── Dictionnaire étoiles + descriptions overrides ─────────────────────────────
+
+const BADGE_META: Record<string, { stars: number; description?: string }> = {
+  b01: { stars: 1 },
+  b02: { stars: 3, description: 'Avoir Messi (ARG17) ET Cristiano Ronaldo (POR15) dans sa collection' },
+  b03: { stars: 2 },
+  b04: { stars: 2 },
+  b05: { stars: 1, description: '50 doublons — à toi les dons et échanges avec les gens de ta ligue !' },
+  b06: { stars: 3 },
+  b08: { stars: 3 },
+  b09: { stars: 3 },
+  b10: { stars: 2 },
+}
+
+function getStars(badge_id: string): number {
+  return BADGE_META[badge_id]?.stars ?? 2
+}
+
+function getDescription(badge: BadgeWithProgress): string {
+  return BADGE_META[badge.badge_id]?.description ?? badge.description
+}
+
+function sortByStars(badges: BadgeWithProgress[]): BadgeWithProgress[] {
+  return [...badges].sort((a, b) => getStars(a.badge_id) - getStars(b.badge_id))
+}
+
+// ── Étoiles de difficulté ─────────────────────────────────────────────────────
+
+function StarRating({ badge_id }: { badge_id: string }) {
+  const n = getStars(badge_id)
+  return (
+    <span className="flex items-center gap-0.5" title={`Difficulté : ${n}/3`}>
+      {[1, 2, 3].map((i) => (
+        <svg
+          key={i}
+          className="h-3 w-3"
+          viewBox="0 0 20 20"
+          fill={i <= n ? '#ffd60a' : 'none'}
+          stroke={i <= n ? '#ffd60a' : '#4b5563'}
+          strokeWidth={1.5}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+          />
+        </svg>
+      ))}
+    </span>
+  )
+}
+
 // ── Sous-composants ───────────────────────────────────────────────────────────
 
 function ProgressBar({ pct, color = '#dc2626' }: { pct: number; color?: string }) {
@@ -32,34 +84,21 @@ function ProgressBar({ pct, color = '#dc2626' }: { pct: number; color?: string }
   )
 }
 
-function PointsPill({ points }: { points: number }) {
-  return (
-    <span
-      className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums"
-      style={{ backgroundColor: 'rgba(255,214,10,0.15)', color: '#ffd60a' }}
-    >
-      {points} pts
-    </span>
-  )
-}
-
 function BadgeIcon({ earned, progress }: { earned: boolean; progress: number }) {
-  if (earned) {
+  if (earned)
     return (
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl"
         style={{ backgroundColor: 'rgba(255,214,10,0.15)' }}>
         🏅
       </span>
     )
-  }
-  if (progress > 0) {
+  if (progress > 0)
     return (
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl"
         style={{ backgroundColor: 'rgba(220,38,38,0.12)' }}>
         ⏳
       </span>
     )
-  }
   return (
     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl bg-white/5">
       🔒
@@ -72,9 +111,7 @@ function BadgeIcon({ earned, progress }: { earned: boolean; progress: number }) 
 function EarnedCard({ badge }: { badge: BadgeWithProgress }) {
   const date = badge.obtained_at
     ? new Date(badge.obtained_at).toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
+        day: 'numeric', month: 'short', year: 'numeric',
       })
     : null
 
@@ -84,12 +121,10 @@ function EarnedCard({ badge }: { badge: BadgeWithProgress }) {
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-semibold text-white">{badge.name}</span>
-          <PointsPill points={badge.points} />
+          <StarRating badge_id={badge.badge_id} />
         </div>
-        <p className="mt-0.5 text-xs text-gray-400">{badge.description}</p>
-        {date && (
-          <p className="mt-1 text-[10px] text-gray-600">Obtenu le {date}</p>
-        )}
+        <p className="mt-0.5 text-xs text-gray-400">{getDescription(badge)}</p>
+        {date && <p className="mt-1 text-[10px] text-gray-600">Obtenu le {date}</p>}
       </div>
     </li>
   )
@@ -104,9 +139,9 @@ function ProgressCard({ badge }: { badge: BadgeWithProgress }) {
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-semibold text-white">{badge.name}</span>
-          <PointsPill points={badge.points} />
+          <StarRating badge_id={badge.badge_id} />
         </div>
-        <p className="mt-0.5 text-xs text-gray-400">{badge.description}</p>
+        <p className="mt-0.5 text-xs text-gray-400">{getDescription(badge)}</p>
         <ProgressBar pct={badge.progress} />
       </div>
     </li>
@@ -117,14 +152,14 @@ function ProgressCard({ badge }: { badge: BadgeWithProgress }) {
 
 function LockedCard({ badge }: { badge: BadgeWithProgress }) {
   return (
-    <li className="flex items-start gap-4 rounded-2xl border border-white/5 bg-white/3 px-5 py-4 opacity-50">
+    <li className="flex items-start gap-4 rounded-2xl border border-white/5 bg-white/[0.03] px-5 py-4 opacity-50">
       <BadgeIcon earned={false} progress={0} />
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-semibold text-gray-400">{badge.name}</span>
-          <PointsPill points={badge.points} />
+          <StarRating badge_id={badge.badge_id} />
         </div>
-        <p className="mt-0.5 text-xs text-gray-600">{badge.description}</p>
+        <p className="mt-0.5 text-xs text-gray-600">{getDescription(badge)}</p>
       </div>
     </li>
   )
@@ -167,7 +202,6 @@ function Section({
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-
       {open && children}
     </section>
   )
@@ -176,9 +210,9 @@ function Section({
 // ── Export principal ──────────────────────────────────────────────────────────
 
 export default function BadgesClient({ badges }: { badges: BadgeWithProgress[] }) {
-  const earned = badges.filter((b) => b.earned)
-  const inProgress = badges.filter((b) => !b.earned && b.progress > 0)
-  const locked = badges.filter((b) => !b.earned && b.progress === 0)
+  const earned    = sortByStars(badges.filter((b) => b.earned))
+  const inProgress = sortByStars(badges.filter((b) => !b.earned && b.progress > 0))
+  const locked    = sortByStars(badges.filter((b) => !b.earned && b.progress === 0))
 
   return (
     <div className="space-y-8">
@@ -203,9 +237,7 @@ export default function BadgesClient({ badges }: { badges: BadgeWithProgress[] }
           </div>
         ) : (
           <ul className="space-y-3">
-            {inProgress
-              .sort((a, b) => b.progress - a.progress)
-              .map((b) => <ProgressCard key={b.badge_id} badge={b} />)}
+            {inProgress.map((b) => <ProgressCard key={b.badge_id} badge={b} />)}
           </ul>
         )}
       </Section>

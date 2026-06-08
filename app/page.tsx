@@ -116,6 +116,41 @@ export default async function HomePage() {
           </Link>
         ))}
       </div>
+
+      {/* ── Comment ça marche ── */}
+      <div className="mx-auto mt-10 max-w-4xl w-full">
+        <h2 className="mb-5 text-lg font-bold" style={{ color: '#ffd60a' }}>
+          💡 Comment ça marche ?
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {[
+            {
+              emoji: '📸',
+              title: 'Scanne tes stickers',
+              desc: "Pose-les sur une table ou prends en photo les stickers déjà collés dans ton album Panini. L'app reconnaît automatiquement chaque joueur et met à jour ta collection.",
+            },
+            {
+              emoji: '📊',
+              title: 'Suis tes stats',
+              desc: 'Stickers uniques, doublons, badges débloqués… tout est calculé en temps réel.',
+            },
+            {
+              emoji: '🔄',
+              title: 'Échange avec ta ligue',
+              desc: "L'app te montre qui dans ta ligue peut te donner ses doublons, et à qui tu peux donner les tiens. Une fois l'échange fait en physique, confirme-le dans l'app et les collections se mettent à jour automatiquement.",
+            },
+          ].map(({ emoji, title, desc }) => (
+            <div
+              key={title}
+              className="rounded-2xl border border-white/10 bg-white/5 px-5 py-5"
+            >
+              <div className="mb-2 text-2xl">{emoji}</div>
+              <h3 className="mb-1 text-sm font-bold text-white">{title}</h3>
+              <p className="text-xs leading-relaxed" style={{ color: '#64748b' }}>{desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </main>
   )
 }

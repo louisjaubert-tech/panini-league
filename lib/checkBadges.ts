@@ -80,9 +80,7 @@ function evaluateBadge(badge: BadgeRef, stats: Stats): boolean {
 
     case 'specific_sticker':
       if (badge.badge_id === 'b02') {
-        for (const id of stats.ownedStickerIds) {
-          if (id.toUpperCase().includes('MESSI')) return true
-        }
+        return stats.ownedStickerIds.has('ARG17') && stats.ownedStickerIds.has('POR15')
       }
       return false
 
