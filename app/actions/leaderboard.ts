@@ -157,3 +157,47 @@ export async function fetchLeagueLeaderboard(
   members.sort((a, b) => b.pct - a.pct)
   return members.map((m, i) => ({ rank: i + 1, ...m }))
 }
+
+export type LeagueTrophyRow = {
+  trophy_id: string
+  name: string
+  username: string
+  obtained_at: string
+}
+
+export async function fetchLeagueTrophies(
+  leagueId: string,
+): Promise<LeagueTrophyRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from('league_trophies')
+    .select('trophy_id, obtained_at, profiles(username)')
+    .eq('league_id', leagueId)
+    .order('obtained_at', { ascending: true })
+
+  if (error) {
+    console.error('[fetchLeagueTrophies]', error.message)
+    return []
+  }
+
+  const TROPHY_NAMES: Record<string, string> = {
+    lt01: 'Trophée Platine',
+    lt02: 'Trophée du Pionnier',
+    lt03: 'Trophée Jules Rimet',
+    lt04: 'Trophée MasterPoulet',
+    lt05: 'Trophée Galette Saucisse',
+    lt06: 'Trophée du Repos Bien Mérité',
+    lt07: 'Trophée des Grosses Boules Dorées',
+    lt08: 'Trophée Lev Yachine',
+  }
+
+  return (data ?? []).map((row) => {
+    const raw = row.profiles
+    const profile = (Array.isArray(raw) ? raw[0] : raw) as { username: string } | null
+    return {
+      trophy_id: row.trophy_id as string,
+      name: TROPHY_NAMES[row.trophy_id as string] ?? row.trophy_id as string,
+      username: profile?.username ?? 'Joueur',
+      obtained_at: row.obtained_at as string,
+    }
+  })
+}

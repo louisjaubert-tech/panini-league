@@ -1,13 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState, useCallback, useTransition, useRef } from 'react'
+import { useEffect, useState, useCallback, useTransition, useRef, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   fetchLeaderboard,
   fetchLeagueLeaderboard,
+  fetchLeagueTrophies,
   type LeaderboardRow,
   type LeagueMemberRow,
+  type LeagueTrophyRow,
 } from '@/app/actions/leaderboard'
 import type { UserLeague } from './page'
 
@@ -210,6 +212,95 @@ function GeneralTab({ initial }: { initial: LeaderboardRow[] }) {
   )
 }
 
+// ── Section trophées de la ligue ─────────────────────────────────────────────
+
+const ALL_TROPHIES = [
+  { trophy_id: 'lt01', name: 'Trophée Platine' },
+  { trophy_id: 'lt02', name: 'Trophée du Pionnier' },
+  { trophy_id: 'lt03', name: 'Trophée Jules Rimet' },
+  { trophy_id: 'lt04', name: 'Trophée MasterPoulet' },
+  { trophy_id: 'lt05', name: 'Trophée Galette Saucisse' },
+  { trophy_id: 'lt06', name: 'Trophée du Repos Bien Mérité' },
+  { trophy_id: 'lt07', name: 'Trophée des Grosses Boules Dorées' },
+  { trophy_id: 'lt08', name: 'Trophée Lev Yachine' },
+]
+
+function TrophiesSection({ trophies, loading }: { trophies: LeagueTrophyRow[]; loading: boolean }) {
+  const [open, setOpen] = useState(true)
+
+  const earnedIds = useMemo(() => new Set(trophies.map((t) => t.trophy_id)), [trophies])
+
+  return (
+    <section>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-3 mb-3"
+      >
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-white">🏆 Trophées de la ligue</h3>
+          <span
+            className="rounded-full px-2 py-0.5 text-xs font-bold"
+            style={{ backgroundColor: 'rgba(255,214,10,0.12)', color: '#ffd60a' }}
+          >
+            {trophies.length} / {ALL_TROPHIES.length}
+          </span>
+        </div>
+        <svg
+          className={`h-4 w-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`}
+          fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        loading ? (
+          <div className="py-6 text-center text-xs text-gray-500">Chargement…</div>
+        ) : (
+          <ul className="space-y-2">
+            {ALL_TROPHIES.map(({ trophy_id, name }) => {
+              const earned = trophies.find((t) => t.trophy_id === trophy_id)
+              if (earned) {
+                const date = new Date(earned.obtained_at).toLocaleDateString('fr-FR', {
+                  day: 'numeric', month: 'short', year: 'numeric',
+                })
+                return (
+                  <li
+                    key={trophy_id}
+                    className="flex items-center gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-3"
+                  >
+                    <span className="text-lg shrink-0">🏆</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{name}</p>
+                      <p className="text-xs text-gray-400">
+                        Remporté par{' '}
+                        <span style={{ color: '#ffd60a' }}>{earned.username}</span>
+                        {' · '}{date}
+                      </p>
+                    </div>
+                  </li>
+                )
+              }
+              return (
+                <li
+                  key={trophy_id}
+                  className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/3 px-4 py-3 opacity-45"
+                >
+                  <span className="text-lg shrink-0">🔒</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-400 truncate">{name}</p>
+                    <p className="text-xs text-gray-600">Pas encore remporté</p>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )
+      )}
+    </section>
+  )
+}
+
 // ── Onglet Ma ligue ───────────────────────────────────────────────────────────
 
 function LeagueTab({
@@ -225,7 +316,9 @@ function LeagueTab({
     () => initialLeagueId ?? userLeagues[0]?.id ?? '',
   )
   const [members, setMembers] = useState<LeagueMemberRow[]>([])
+  const [trophies, setTrophies] = useState<LeagueTrophyRow[]>([])
   const [loading, setLoading] = useState(false)
+  const [trophiesLoading, setTrophiesLoading] = useState(false)
   const prevId = useRef<string>('')
 
   useEffect(() => {
@@ -233,9 +326,15 @@ function LeagueTab({
     if (selectedId === prevId.current) return
     prevId.current = selectedId
     setLoading(true)
-    fetchLeagueLeaderboard(selectedId, currentUserId).then((data) => {
-      setMembers(data)
+    setTrophiesLoading(true)
+    Promise.all([
+      fetchLeagueLeaderboard(selectedId, currentUserId),
+      fetchLeagueTrophies(selectedId),
+    ]).then(([membersData, trophiesData]) => {
+      setMembers(membersData)
+      setTrophies(trophiesData)
       setLoading(false)
+      setTrophiesLoading(false)
     })
   }, [selectedId, currentUserId])
 
@@ -253,11 +352,14 @@ function LeagueTab({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Sélecteur de ligue */}
       <select
         value={selectedId}
-        onChange={(e) => setSelectedId(e.target.value)}
+        onChange={(e) => {
+          prevId.current = ''
+          setSelectedId(e.target.value)
+        }}
         className="rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-[#ffd60a]/40"
       >
         {userLeagues.map((l) => (
@@ -267,7 +369,7 @@ function LeagueTab({
         ))}
       </select>
 
-      {/* Classement */}
+      {/* Classement membres */}
       {loading ? (
         <div className="py-16 text-center text-sm text-gray-500">Chargement…</div>
       ) : members.length === 0 ? (
@@ -313,6 +415,11 @@ function LeagueTab({
           ))}
         </ul>
       )}
+
+      {/* Trophées de la ligue */}
+      <div className="border-t border-white/10 pt-6">
+        <TrophiesSection trophies={trophies} loading={trophiesLoading} />
+      </div>
     </div>
   )
 }
