@@ -1,25 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import Image from 'next/image'
 import { supabase as supabaseBrowser } from '@/lib/supabase'
-import { fetchDashboardData, type DashboardData, type PackOpening } from '@/app/actions/dashboard'
+import { fetchDashboardData, type DashboardData } from '@/app/actions/dashboard'
 import BadgesClient, { type BadgeWithProgress } from '@/app/badges/BadgesClient'
-
-function OcrBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; cls: string }> = {
-    pending:    { label: 'En attente', cls: 'bg-yellow-500/20 text-yellow-300' },
-    processing: { label: 'Analyse…',   cls: 'bg-blue-500/20 text-blue-300' },
-    done:       { label: 'Analysé',    cls: 'bg-green-500/20 text-green-300' },
-    error:      { label: 'Erreur',     cls: 'bg-red-500/20 text-red-400' },
-  }
-  const { label, cls } = map[status] ?? { label: status, cls: 'bg-white/10 text-gray-400' }
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
-      {label}
-    </span>
-  )
-}
 
 export default function DashboardClient({
   userId,
@@ -50,7 +34,7 @@ export default function DashboardClient({
     return () => { supabaseBrowser.removeChannel(channel) }
   }, [userId, refresh])
 
-  const { uniqueCards, totalReference, completionPct, duplicates, countries, recentPacks, totalPacks } = data
+  const { uniqueCards, totalReference, completionPct, duplicates, countries, totalPacks } = data
   const earnedBadgesCount = badges.filter((b) => b.earned).length
 
   return (
@@ -102,60 +86,12 @@ export default function DashboardClient({
         </div>
       </section>
 
-      {/* ── Bas de page : badges (2/3) + blisters (1/3) ── */}
-      <div className="grid gap-8 lg:grid-cols-3">
-
-        {/* Colonne gauche : badges (2/3) */}
-        <section className="lg:col-span-2">
-          <h2 className="mb-6 text-lg font-semibold text-white">🏅 Mes badges</h2>
-          {badges.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/15 p-8 text-center text-sm text-gray-500">
-              Aucun badge débloqué ou en cours pour l&apos;instant
-            </div>
-          ) : (
-            <BadgesClient badges={badges} />
-          )}
+      {/* ── Mes badges (pleine largeur, deux colonnes côte à côte) ── */}
+      {badges.length > 0 && (
+        <section>
+          <BadgesClient badges={badges} sideLayout />
         </section>
-
-        {/* Colonne droite : derniers blisters (1/3) */}
-        <section className="lg:col-span-1">
-          <h2 className="mb-4 text-lg font-semibold text-white">📸 Derniers blisters</h2>
-          {recentPacks.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/15 p-8 text-center text-sm text-gray-500">
-              Aucun blister scanné pour l&apos;instant
-            </div>
-          ) : (
-            <ul className="space-y-3">
-              {recentPacks.map((pack: PackOpening) => (
-                <li key={pack.id} className="flex items-center gap-4 rounded-2xl bg-white/10 border border-white/10 px-5 py-4">
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-white/10">
-                    {pack.photo_url ? (
-                      <Image src={pack.photo_url} alt="Blister" fill className="object-cover" unoptimized />
-                    ) : (
-                      <div className="flex h-full items-center justify-center">
-                        <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12h.008v.008H13.5V12zm-6 3.75h12a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-white">
-                      Blister du{' '}
-                      {new Date(pack.opened_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' })}
-                    </p>
-                    <OcrBadge status={pack.ocr_status} />
-                  </div>
-                  <time className="ml-auto shrink-0 text-xs text-gray-500 tabular-nums">
-                    {new Date(pack.opened_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                  </time>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-      </div>
+      )}
 
     </div>
   )

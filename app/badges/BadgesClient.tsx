@@ -156,57 +156,75 @@ function NotEarnedCard({ badge }: { badge: BadgeWithProgress }) {
 
 // ── Export principal ──────────────────────────────────────────────────────────
 
-export default function BadgesClient({ badges }: { badges: BadgeWithProgress[] }) {
-  const earned   = sortByStars(badges.filter((b) => b.earned))
+export default function BadgesClient({
+  badges,
+  sideLayout = false,
+}: {
+  badges: BadgeWithProgress[]
+  sideLayout?: boolean
+}) {
+  const earned    = sortByStars(badges.filter((b) => b.earned))
   const notEarned = sortByStars(badges.filter((b) => !b.earned))
+
+  const sectionEarned = (
+    <section>
+      <div className="flex items-center gap-2 mb-3">
+        <h2 className="text-base font-semibold text-white">🏅 Badges obtenus</h2>
+        <span
+          className="rounded-full px-2 py-0.5 text-xs font-bold"
+          style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#9ca3af' }}
+        >
+          {earned.length}
+        </span>
+      </div>
+      {earned.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-gray-600">
+          Aucun badge encore obtenu.
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {earned.map((b) => <EarnedCard key={b.badge_id} badge={b} />)}
+        </ul>
+      )}
+    </section>
+  )
+
+  const sectionInProgress = (
+    <section>
+      <div className="flex items-center gap-2 mb-3">
+        <h2 className="text-base font-semibold text-white">⏳ En progression</h2>
+        <span
+          className="rounded-full px-2 py-0.5 text-xs font-bold"
+          style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#9ca3af' }}
+        >
+          {notEarned.length}
+        </span>
+      </div>
+      {notEarned.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-gray-600">
+          Tous les badges sont débloqués !
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {notEarned.map((b) => <NotEarnedCard key={b.badge_id} badge={b} />)}
+        </ul>
+      )}
+    </section>
+  )
+
+  if (sideLayout) {
+    return (
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        {sectionEarned}
+        {sectionInProgress}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
-
-      {/* Badges obtenus */}
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-base font-semibold text-white">🏅 Badges obtenus</h2>
-          <span
-            className="rounded-full px-2 py-0.5 text-xs font-bold"
-            style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#9ca3af' }}
-          >
-            {earned.length}
-          </span>
-        </div>
-        {earned.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-gray-600">
-            Aucun badge encore obtenu.
-          </div>
-        ) : (
-          <ul className="space-y-3">
-            {earned.map((b) => <EarnedCard key={b.badge_id} badge={b} />)}
-          </ul>
-        )}
-      </section>
-
-      {/* En progression + verrouillés */}
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-base font-semibold text-white">⏳ En progression</h2>
-          <span
-            className="rounded-full px-2 py-0.5 text-xs font-bold"
-            style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#9ca3af' }}
-          >
-            {notEarned.length}
-          </span>
-        </div>
-        {notEarned.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-gray-600">
-            Tous les badges sont débloqués !
-          </div>
-        ) : (
-          <ul className="space-y-3">
-            {notEarned.map((b) => <NotEarnedCard key={b.badge_id} badge={b} />)}
-          </ul>
-        )}
-      </section>
-
+      {sectionEarned}
+      {sectionInProgress}
     </div>
   )
 }
