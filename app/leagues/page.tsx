@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import LeaguesClient from './LeaguesClient'
+import LeaguesClient, { CopyCodeButton } from './LeaguesClient'
 
 type LeagueRow = {
   id: string
@@ -108,6 +108,9 @@ export default async function LeaguesPage() {
                           admin
                         </span>
                       )}
+                    </p>
+                    <p className="mt-1">
+                      <CopyCodeButton code={league.invite_code} />
                     </p>
                   </div>
                   <div className="shrink-0 flex items-center gap-2">

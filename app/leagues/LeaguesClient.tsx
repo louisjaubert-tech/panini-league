@@ -13,6 +13,32 @@ function Spinner() {
   )
 }
 
+export function CopyCodeButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: '#64748b' }}>
+      Code&nbsp;:&nbsp;
+      <span className="font-mono font-semibold tracking-wide text-gray-300">{code}</span>
+      <button
+        onClick={handleCopy}
+        title="Copier le code"
+        className="ml-0.5 rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors hover:bg-white/10"
+        style={{ color: copied ? '#4ade80' : '#64748b' }}
+      >
+        {copied ? 'Copié !' : '📋'}
+      </button>
+    </span>
+  )
+}
+
 export default function LeaguesClient() {
   const router = useRouter()
 
