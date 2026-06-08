@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -10,6 +11,7 @@ type PackRow = {
   id: string
   opened_at: string
   ocr_status: string
+  photo_url: string | null
   stickerCount: number
 }
 
@@ -40,9 +42,28 @@ function RecentBlisters({ packs }: { packs: PackRow[] }) {
         {packs.map((pack) => (
           <li
             key={pack.id}
-            className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+            className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3"
           >
-            <div className="min-w-0">
+            {/* Miniature */}
+            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-white/10">
+              {pack.photo_url ? (
+                <Image
+                  src={pack.photo_url}
+                  alt="Blister"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-gray-600">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12h.008v.008H13.5V12zm-6 3.75h12a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                </div>
+              )}
+            </div>
+            {/* Infos */}
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-white">
                 {new Date(pack.opened_at).toLocaleDateString('fr-FR', {
                   day: '2-digit',
@@ -81,7 +102,7 @@ export default async function ScanPage() {
   // Fetch 10 derniers blisters + count de stickers par pack en parallèle
   const { data: packsRaw } = await supabaseAdmin
     .from('pack_openings')
-    .select('id, opened_at, ocr_status')
+    .select('id, opened_at, ocr_status, photo_url')
     .eq('user_id', user.id)
     .order('opened_at', { ascending: false })
     .limit(10)
@@ -106,6 +127,7 @@ export default async function ScanPage() {
     id: p.id as string,
     opened_at: p.opened_at as string,
     ocr_status: p.ocr_status as string,
+    photo_url: (p.photo_url as string | null) ?? null,
     stickerCount: stickerCounts.get(p.id as string) ?? 0,
   }))
 

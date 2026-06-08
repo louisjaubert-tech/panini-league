@@ -94,6 +94,36 @@ function SuccessBanner({ result, baseMessage }: { result: TradeSuccess; baseMess
   )
 }
 
+// ── Encarts explicatifs ───────────────────────────────────────────────────────
+
+function ExplainReceive() {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-gray-400 space-y-1">
+      <p>
+        Voici les doublons que tes amis peuvent te donner.
+      </p>
+      <p className="italic text-gray-500">
+        Ex : Julien a Mbappé en doublon et tu ne l&apos;as pas encore → il apparaît ici.
+        Coche les stickers que Julien t&apos;a donnés physiquement puis clique &laquo;&nbsp;Confirmer la réception&nbsp;&raquo;.
+      </p>
+    </div>
+  )
+}
+
+function ExplainGive() {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-gray-400 space-y-1">
+      <p>
+        Voici tes doublons utiles à tes amis.
+      </p>
+      <p className="italic text-gray-500">
+        Ex : tu as Messi en doublon et Thibault ne l&apos;a pas → il apparaît ici.
+        Coche les stickers que tu as donnés physiquement à Thibault puis clique &laquo;&nbsp;Confirmer le don&nbsp;&raquo;.
+      </p>
+    </div>
+  )
+}
+
 // ── Onglet 1 : Ce que je peux recevoir ───────────────────────────────────────
 
 function ReceiveTab({
@@ -160,14 +190,18 @@ function ReceiveTab({
 
   if (giversData.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-white/15 p-10 text-center text-sm text-gray-500">
-        Aucun membre ne peut te donner de stickers pour l&apos;instant.
+      <div className="space-y-3">
+        <ExplainReceive />
+        <div className="rounded-2xl border border-dashed border-white/15 p-10 text-center text-sm text-gray-500">
+          Aucun membre ne peut te donner de stickers pour l&apos;instant.
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-3">
+      <ExplainReceive />
       <ul className="space-y-2">
         {giversData.map(({ member, stickers }) => {
           const isSelected = selectedGiverId === member.id
@@ -290,16 +324,20 @@ function GiveTab({
 
   if (receiversData.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-white/15 p-10 text-center text-sm text-gray-500">
-        {myDoublons.length === 0
-          ? "Tu n'as aucun sticker en double pour l'instant."
-          : 'Tous les membres de ta ligue ont déjà tes doublons.'}
+      <div className="space-y-3">
+        <ExplainGive />
+        <div className="rounded-2xl border border-dashed border-white/15 p-10 text-center text-sm text-gray-500">
+          {myDoublons.length === 0
+            ? "Tu n'as aucun sticker en double pour l'instant."
+            : 'Tous les membres de ta ligue ont déjà tes doublons.'}
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-3">
+      <ExplainGive />
       <ul className="space-y-2">
         {receiversData.map(({ member, stickers }) => {
           const isSelected = selectedReceiverId === member.id

@@ -54,6 +54,16 @@ export default function EchangesPageClient({
 
   return (
     <div className="space-y-5">
+      {/* Encart explicatif */}
+      <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-gray-300 space-y-1.5">
+        <p className="font-medium text-white">💡 Comment fonctionnent les échanges ?</p>
+        <p>
+          Sélectionne ta ligue pour voir les stickers que tes amis peuvent te donner, ou ceux que toi tu peux leur donner.
+          Une fois l&apos;échange fait en physique, confirme-le ici — pas besoin de rescanner les stickers reçus,
+          ils sont automatiquement ajoutés à ta collection !
+        </p>
+      </div>
+
       {/* Sélecteur de ligue */}
       {leagues.length > 1 && (
         <select
