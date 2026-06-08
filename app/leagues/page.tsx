@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import LeaguesClient, { CopyCodeButton } from './LeaguesClient'
+import LeaguesClient, { CopyCodeButton, CopyLinkButton } from './LeaguesClient'
 
 type LeagueRow = {
   id: string
@@ -97,10 +97,11 @@ export default async function LeaguesPage() {
               {leagues.map((league) => (
                 <li
                   key={league.id}
-                  className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 px-5 py-4"
+                  className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
+                  {/* Infos ligue */}
                   <div className="min-w-0">
-                    <p className="font-semibold text-white truncate">{league.name}</p>
+                    <p className="break-words font-semibold text-white">{league.name}</p>
                     <p className="mt-0.5 text-xs" style={{ color: '#64748b' }}>
                       {league.member_count} membre{league.member_count !== 1 ? 's' : ''}
                       {league.created_by === user.id && (
@@ -109,11 +110,13 @@ export default async function LeaguesPage() {
                         </span>
                       )}
                     </p>
-                    <p className="mt-1">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
                       <CopyCodeButton code={league.invite_code} />
-                    </p>
+                      <CopyLinkButton code={league.invite_code} />
+                    </div>
                   </div>
-                  <div className="shrink-0 flex items-center gap-2">
+                  {/* Actions */}
+                  <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
                     <Link
                       href={`/leaderboard?league=${league.id}`}
                       className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-80"

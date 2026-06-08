@@ -39,6 +39,29 @@ export function CopyCodeButton({ code }: { code: string }) {
   )
 }
 
+export function CopyLinkButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    const url = `https://panini-league.vercel.app/join/${code}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      title="Copier le lien d'invitation"
+      className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2.5 py-1 text-[11px] font-medium transition-colors hover:bg-white/10"
+      style={{ color: copied ? '#4ade80' : '#94a3b8' }}
+    >
+      {copied ? 'Copié !' : '🔗 Copier le lien'}
+    </button>
+  )
+}
+
 export default function LeaguesClient() {
   const router = useRouter()
 

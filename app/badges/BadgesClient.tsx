@@ -19,10 +19,9 @@ export type BadgeWithProgress = {
 const BADGE_META: Record<string, { stars: number; description?: string }> = {
   b01: { stars: 1 },
   b02: { stars: 3, description: 'Avoir Messi (ARG17) ET Cristiano Ronaldo (POR15) dans sa collection' },
-  b03: { stars: 2 },
   b04: { stars: 2 },
   b05: { stars: 1, description: '50 doublons — à toi les dons et échanges avec les gens de ta ligue !' },
-  b06: { stars: 3 },
+  b06: { stars: 2, description: 'Au moins 1 joueur de chacun des 32 pays participants à la Coupe du Monde 2026' },
   b08: { stars: 3 },
   b09: { stars: 3 },
   b10: { stars: 2 },
@@ -156,6 +155,13 @@ function NotEarnedCard({ badge }: { badge: BadgeWithProgress }) {
 
 // ── Export principal ──────────────────────────────────────────────────────────
 
+const EXPLAIN_ENCART = (
+  <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-gray-300 space-y-1">
+    <p>🏅 <span className="font-medium text-white">Les badges</span> récompensent ta progression personnelle — ils dépendent uniquement de ta collection.</p>
+    <p>🏆 <span className="font-medium text-white">Les trophées</span> sont remportés au sein de ta ligue — le premier à remplir la condition dans sa ligue remporte le trophée.</p>
+  </div>
+)
+
 export default function BadgesClient({
   badges,
   sideLayout = false,
@@ -214,15 +220,19 @@ export default function BadgesClient({
 
   if (sideLayout) {
     return (
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        {sectionEarned}
-        {sectionInProgress}
+      <div className="space-y-6">
+        {EXPLAIN_ENCART}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {sectionEarned}
+          {sectionInProgress}
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-8">
+      {EXPLAIN_ENCART}
       {sectionEarned}
       {sectionInProgress}
     </div>

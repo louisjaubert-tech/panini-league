@@ -11,6 +11,7 @@ export type AuthState = {
 export async function login(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
+  const redirectTo = (formData.get('redirect') as string | null)?.trim() || '/'
 
   if (!email || !password) {
     return { error: 'Email et mot de passe requis.' }
@@ -31,7 +32,9 @@ export async function login(_prev: AuthState, formData: FormData): Promise<AuthS
     path: '/',
   })
 
-  redirect('/dashboard')
+  // Sécurité : on n'accepte que les redirections relatives (pas d'open redirect)
+  const safe = redirectTo.startsWith('/') ? redirectTo : '/'
+  redirect(safe)
 }
 
 export async function register(_prev: AuthState, formData: FormData): Promise<AuthState> {
@@ -66,7 +69,7 @@ export async function register(_prev: AuthState, formData: FormData): Promise<Au
       maxAge: data.session.expires_in,
       path: '/',
     })
-    redirect('/dashboard')
+    redirect('/')
   }
 
   return { error: 'Vérifie ton email pour confirmer ton inscription.' }

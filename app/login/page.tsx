@@ -2,10 +2,13 @@
 
 import { useActionState, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { login } from '@/app/actions/auth'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect') ?? ''
   const [state, action, pending] = useActionState(login, {})
   const emailRef = useRef<HTMLInputElement>(null)
   const [resetStatus, setResetStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle')
@@ -46,6 +49,9 @@ export default function LoginPage() {
           </div>
 
           <form action={action} className="space-y-5">
+            {redirectTo && (
+              <input type="hidden" name="redirect" value={redirectTo} />
+            )}
             {state.error && (
               <div className="rounded-lg bg-red-900/40 border border-red-700/50 px-4 py-3 text-sm text-red-300">
                 {state.error}

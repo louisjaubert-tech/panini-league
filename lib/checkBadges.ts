@@ -221,7 +221,7 @@ const LEAGUE_TROPHIES: { trophy_id: string; name: string }[] = [
   { trophy_id: 'lt01', name: 'Trophée Platine' },
   { trophy_id: 'lt02', name: 'Trophée du Pionnier' },
   { trophy_id: 'lt03', name: 'Trophée Jules Rimet' },
-  { trophy_id: 'lt04', name: 'Trophée MasterPoulet' },
+  { trophy_id: 'lt04', name: 'Trophée La France' },
   { trophy_id: 'lt05', name: 'Trophée Galette Saucisse' },
   { trophy_id: 'lt06', name: 'Trophée du Repos Bien Mérité' },
   { trophy_id: 'lt07', name: 'Trophée des Grosses Boules Dorées' },

@@ -10,10 +10,9 @@ import { uploadPack } from '@/app/actions/scan'
 const BADGE_META: Record<string, { stars: number }> = {
   b01: { stars: 1 },
   b02: { stars: 3 },
-  b03: { stars: 2 },
   b04: { stars: 2 },
   b05: { stars: 1 },
-  b06: { stars: 3 },
+  b06: { stars: 2 },
   b08: { stars: 3 },
   b09: { stars: 3 },
   b10: { stars: 2 },
