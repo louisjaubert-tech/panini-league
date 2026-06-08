@@ -77,7 +77,7 @@ function ResultsModal({ results, onClose }: { results: ScanResults; onClose: () 
                 {results.new_badges.map((b) => (
                   <li key={b.badge_id} className="flex items-center justify-between rounded-xl bg-yellow-400/10 px-4 py-3">
                     <span className="text-sm font-medium text-white">{b.name}</span>
-                    <span className="text-sm font-semibold text-red-400">+{b.points} pts</span>
+                    <span className="text-sm font-semibold text-orange-400">+{b.points} pts</span>
                   </li>
                 ))}
               </ul>
@@ -88,7 +88,7 @@ function ResultsModal({ results, onClose }: { results: ScanResults; onClose: () 
         <div className="p-6 border-t border-white/10">
           <button
             onClick={onClose}
-            className="w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-500 transition-colors"
+            className="w-full rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-400 transition-colors"
           >
             Scanner un autre blister
           </button>
@@ -162,10 +162,10 @@ export default function ScanPage() {
 
       {/* État : analyse en cours */}
       {analyzing && (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-red-900/30 bg-red-900/10 py-16 text-center">
+        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-orange-500/30 bg-orange-500/10 py-16 text-center">
           <Spinner />
-          <p className="text-sm font-medium text-red-400">🔍 Analyse en cours…</p>
-          <p className="text-xs text-red-300/60">Reconnaissance des stickers par IA</p>
+          <p className="text-sm font-medium text-orange-400">🔍 Analyse en cours…</p>
+          <p className="text-xs text-orange-300/60">Reconnaissance des stickers par IA</p>
         </div>
       )}
 
@@ -213,10 +213,10 @@ export default function ScanPage() {
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-white/15 bg-transparent px-6 py-16 text-center hover:border-red-500/50 hover:bg-white/10 transition-colors"
+              className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-white/15 bg-transparent px-6 py-16 text-center hover:border-orange-500/50 hover:bg-white/10 transition-colors"
             >
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-900/30">
-                <svg className="h-7 w-7 text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-500/20">
+                <svg className="h-7 w-7 text-orange-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
                 </svg>
@@ -261,7 +261,7 @@ export default function ScanPage() {
                 <button
                   type="submit"
                   disabled={pending || !hasFile}
-                  className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
                   {pending ? (
                     <span className="flex items-center justify-center gap-2">

@@ -73,8 +73,8 @@ export default function NavbarClient({
               href="/scan"
               className={`hidden sm:block rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
                 isActive('/scan')
-                  ? 'bg-red-600 text-white'
-                  : 'bg-red-600/20 text-red-300 hover:bg-red-600/40 hover:text-white'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-orange-500/20 text-orange-300 hover:bg-orange-500/40 hover:text-white'
               }`}
             >
               📷 ScanPhoto
@@ -140,7 +140,7 @@ export default function NavbarClient({
                 <Link
                   href="/register"
                   className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: '#dc2626' }}
+                  style={{ backgroundColor: '#f97316' }}
                 >
                   S&apos;inscrire
                 </Link>
@@ -213,7 +213,7 @@ export default function NavbarClient({
                   href="/register"
                   onClick={() => setMobileOpen(false)}
                   className="flex-1 rounded-lg px-3 py-2 text-center text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: '#dc2626' }}
+                  style={{ backgroundColor: '#f97316' }}
                 >
                   S&apos;inscrire
                 </Link>

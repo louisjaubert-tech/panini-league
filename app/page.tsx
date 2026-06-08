@@ -110,7 +110,7 @@ export default async function HomePage() {
             <Link
               key={title}
               href={href}
-              className="block rounded-2xl border border-white/10 bg-white/5 px-4 py-4 transition-all duration-200 hover:scale-[1.02] hover:border-red-600/40 hover:bg-white/10"
+              className="block rounded-2xl border border-white/10 bg-white/5 px-4 py-4 transition-all duration-200 hover:scale-[1.02] hover:border-orange-500/40 hover:bg-white/10"
             >
               <div className="mb-2 text-2xl">{emoji}</div>
               <h3 className="mb-1 text-sm font-bold text-white">{title}</h3>

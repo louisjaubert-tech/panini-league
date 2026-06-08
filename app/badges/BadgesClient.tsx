@@ -68,7 +68,7 @@ function StarRating({ badge_id }: { badge_id: string }) {
 
 // ── Sous-composants ───────────────────────────────────────────────────────────
 
-function ProgressBar({ pct, color = '#dc2626' }: { pct: number; color?: string }) {
+function ProgressBar({ pct, color = '#f97316' }: { pct: number; color?: string }) {
   return (
     <div className="mt-2 flex items-center gap-2">
       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">

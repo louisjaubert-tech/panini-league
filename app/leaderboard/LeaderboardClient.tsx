@@ -47,7 +47,7 @@ function ProgressBar({ pct }: { pct: number }) {
       <div className="h-1.5 w-16 overflow-hidden rounded-full bg-white/10">
         <div
           className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${pct}%`, backgroundColor: '#dc2626' }}
+          style={{ width: `${pct}%`, backgroundColor: '#f97316' }}
         />
       </div>
       <span className="tabular-nums text-sm font-medium text-gray-400">{pct}&nbsp;%</span>
@@ -385,7 +385,7 @@ function LeagueTab({
               key={member.userId}
               className={`flex items-center gap-4 rounded-xl border px-5 py-3.5 ${
                 member.isCurrentUser
-                  ? 'border-red-600/40 bg-red-900/10'
+                  ? 'border-orange-500/40 bg-orange-500/10'
                   : 'border-white/10 bg-white/5'
               }`}
             >
@@ -404,7 +404,7 @@ function LeagueTab({
                 </div>
                 <div className="mt-1.5 flex items-center gap-2">
                   <div className="h-1.5 flex-1 max-w-[120px] overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full rounded-full bg-red-500" style={{ width: `${member.pct}%` }} />
+                    <div className="h-full rounded-full bg-orange-500" style={{ width: `${member.pct}%` }} />
                   </div>
                   <span className="text-xs tabular-nums text-gray-500">{member.pct}%</span>
                 </div>
@@ -458,7 +458,7 @@ export default function LeaderboardClient({
             onClick={() => setTab(key)}
             className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
               tab === key
-                ? 'bg-[#dc2626] text-white shadow'
+                ? 'bg-[#f97316] text-white shadow'
                 : 'text-gray-400 hover:text-white'
             }`}
           >

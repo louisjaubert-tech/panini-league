@@ -30,7 +30,7 @@ function CountryRow({ data }: { data: CountryData }) {
     data.pct === 100
       ? 'bg-yellow-400'
       : data.pct >= 50
-      ? 'bg-red-500'
+      ? 'bg-orange-500'
       : 'bg-white/30'
 
   return (
@@ -112,7 +112,7 @@ export default function CollectionClient({ countries }: { countries: CountryData
                 ? 'text-white'
                 : 'border border-white/15 text-gray-400 hover:border-white/30 hover:text-white'
             }`}
-            style={activeContinent === c ? { backgroundColor: '#dc2626' } : {}}
+            style={activeContinent === c ? { backgroundColor: '#f97316' } : {}}
           >
             {c}
           </button>

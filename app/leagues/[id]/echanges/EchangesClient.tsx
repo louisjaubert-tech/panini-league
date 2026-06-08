@@ -35,7 +35,7 @@ function TabButton({
     <button
       onClick={onClick}
       className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-        active ? 'bg-[#dc2626] text-white shadow' : 'text-gray-400 hover:text-white'
+        active ? 'bg-[#f97316] text-white shadow' : 'text-gray-400 hover:text-white'
       }`}
     >
       {children}
@@ -61,7 +61,7 @@ function StickerCheckList({
               type="checkbox"
               checked={checked.has(s.sticker_id)}
               onChange={() => onToggle(s.sticker_id)}
-              className="h-4 w-4 cursor-pointer rounded border-white/30 accent-[#dc2626]"
+              className="h-4 w-4 cursor-pointer rounded border-white/30 accent-[#f97316]"
             />
             <span className="flex-1 text-sm text-white truncate">{s.display_name}</span>
             {s.quantity > 1 && (
@@ -99,9 +99,11 @@ function SuccessBanner({ result, baseMessage }: { result: TradeSuccess; baseMess
 function ReceiveTab({
   me,
   others,
+  onReload,
 }: {
   me: ExchangeData['members'][number]
   others: ExchangeData['members'][number][]
+  onReload?: () => void
 }) {
   const myOwned = useMemo(() => ownedSet(me.collection), [me.collection])
 
@@ -151,6 +153,7 @@ function ReceiveTab({
       } else {
         setTradeResult(result)
         setChecked(new Set())
+        onReload?.()
       }
     })
   }
@@ -174,7 +177,7 @@ function ReceiveTab({
                 onClick={() => selectGiver(member.id)}
                 className={`w-full rounded-xl border px-5 py-3.5 text-left transition-colors ${
                   isSelected
-                    ? 'border-[#dc2626]/50 bg-[#dc2626]/10'
+                    ? 'border-[#f97316]/50 bg-[#f97316]/10'
                     : 'border-white/10 bg-white/5 hover:bg-white/8'
                 }`}
               >
@@ -182,7 +185,7 @@ function ReceiveTab({
                   <span className="font-semibold text-white">{member.username}</span>
                   <span
                     className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold"
-                    style={{ backgroundColor: 'rgba(220,38,38,0.2)', color: '#f87171' }}
+                    style={{ backgroundColor: 'rgba(249,115,22,0.2)', color: '#fb923c' }}
                   >
                     {stickers.length} sticker{stickers.length > 1 ? 's' : ''}
                   </span>
@@ -204,7 +207,7 @@ function ReceiveTab({
                     onClick={handleConfirm}
                     disabled={checked.size === 0 || isPending}
                     className="w-full rounded-xl py-2.5 text-sm font-bold text-white transition-opacity disabled:opacity-40"
-                    style={{ backgroundColor: '#dc2626' }}
+                    style={{ backgroundColor: '#f97316' }}
                   >
                     {isPending ? 'Enregistrement…' : `Confirmer la réception (${checked.size})`}
                   </button>
@@ -223,9 +226,11 @@ function ReceiveTab({
 function GiveTab({
   me,
   others,
+  onReload,
 }: {
   me: ExchangeData['members'][number]
   others: ExchangeData['members'][number][]
+  onReload?: () => void
 }) {
   const myDoublons = useMemo(() => getDoublons(me.collection), [me.collection])
 
@@ -278,6 +283,7 @@ function GiveTab({
       } else {
         setTradeResult(result)
         setChecked(new Set())
+        onReload?.()
       }
     })
   }
@@ -352,9 +358,11 @@ function GiveTab({
 export default function EchangesClient({
   data,
   leagueId: _leagueId,
+  onReload,
 }: {
   data: ExchangeData
   leagueId: string
+  onReload?: () => void
 }) {
   const [tab, setTab] = useState<'receive' | 'give'>('receive')
 
@@ -373,9 +381,9 @@ export default function EchangesClient({
       </div>
 
       {tab === 'receive' ? (
-        <ReceiveTab me={me} others={others} />
+        <ReceiveTab me={me} others={others} onReload={onReload} />
       ) : (
-        <GiveTab me={me} others={others} />
+        <GiveTab me={me} others={others} onReload={onReload} />
       )}
     </div>
   )

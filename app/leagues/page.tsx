@@ -104,7 +104,7 @@ export default async function LeaguesPage() {
                     <p className="mt-0.5 text-xs" style={{ color: '#64748b' }}>
                       {league.member_count} membre{league.member_count !== 1 ? 's' : ''}
                       {league.created_by === user.id && (
-                        <span className="ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-medium" style={{ backgroundColor: 'rgba(220,38,38,0.2)', color: '#f87171' }}>
+                        <span className="ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-medium" style={{ backgroundColor: 'rgba(249,115,22,0.2)', color: '#fb923c' }}>
                           admin
                         </span>
                       )}
@@ -117,7 +117,7 @@ export default async function LeaguesPage() {
                     <Link
                       href={`/leaderboard?league=${league.id}`}
                       className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-80"
-                      style={{ backgroundColor: '#dc2626' }}
+                      style={{ backgroundColor: '#f97316' }}
                     >
                       🏆 Classement
                     </Link>
