@@ -535,43 +535,102 @@ function LeagueTab({
           Aucun membre dans cette ligue.
         </div>
       ) : (
-        <ul className="space-y-2">
-          {members.map((member) => (
-            <li
-              key={member.userId}
-              className={`flex items-center gap-4 rounded-xl border px-5 py-3.5 ${
-                member.isCurrentUser
-                  ? 'border-orange-500/40 bg-orange-500/10'
-                  : 'border-white/10 bg-white/5'
-              }`}
-            >
-              <span
-                className="w-6 shrink-0 text-center text-sm font-bold tabular-nums"
-                style={{ color: member.rank === 1 ? '#ffd60a' : '#64748b' }}
+        <>
+          {/* Tableau desktop */}
+          <div className="hidden overflow-hidden rounded-2xl border border-white/10 bg-white/5 md:block">
+            <table className="min-w-full divide-y divide-white/5">
+              <thead>
+                <tr className="bg-white/5">
+                  <th className="py-3.5 pl-6 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Rang</th>
+                  <th className="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Joueur</th>
+                  <th className="px-3 py-3.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Stickers uniques</th>
+                  <th className="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Album complété</th>
+                  <th className="px-3 py-3.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Doublons</th>
+                  <th className="px-3 py-3.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Badges</th>
+                  <th className="py-3.5 pl-3 pr-6 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Trophées</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {members.map((member) => (
+                  <tr
+                    key={member.userId}
+                    className={`transition-colors hover:bg-white/5 ${
+                      member.isCurrentUser ? 'bg-orange-500/5' : member.rank <= 3 ? 'bg-yellow-500/5' : ''
+                    }`}
+                  >
+                    <td className="py-4 pl-6 pr-3"><RankBadge rank={member.rank} /></td>
+                    <td className="px-3 py-4">
+                      <span className="font-semibold text-white">{member.username}</span>
+                      {member.isCurrentUser && (
+                        <span className="ml-1.5 text-[10px] text-gray-500">(toi)</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-4 text-right">
+                      <span className="tabular-nums text-lg font-bold" style={{ color: '#ffd60a' }}>{member.uniqueCards}</span>
+                    </td>
+                    <td className="px-3 py-4"><ProgressBar pct={member.pct} /></td>
+                    <td className="px-3 py-4 text-right">
+                      <span className="tabular-nums text-sm font-medium text-gray-400">{member.duplicates}</span>
+                    </td>
+                    <td className="px-3 py-4 text-right">
+                      <span className="inline-flex items-center gap-1 tabular-nums text-sm font-medium text-gray-400">
+                        <span>{member.badgeCount}</span><span className="text-base leading-none">🏅</span>
+                      </span>
+                    </td>
+                    <td className="py-4 pl-3 pr-6 text-right">
+                      <span className="inline-flex items-center gap-1 tabular-nums text-sm font-medium text-gray-400">
+                        <span>{member.trophyCount}</span><span className="text-base leading-none">🏆</span>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Cards mobile */}
+          <div className="space-y-3 md:hidden">
+            {members.map((member) => (
+              <div
+                key={member.userId}
+                className={`rounded-2xl border px-5 py-4 ${
+                  member.isCurrentUser
+                    ? 'border-orange-500/40 bg-orange-500/10'
+                    : member.rank <= 3
+                    ? 'border-yellow-500/20 bg-yellow-500/5'
+                    : 'border-white/10 bg-white/5'
+                }`}
               >
-                {member.rank}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-white truncate">{member.username}</span>
-                  {member.isCurrentUser && (
-                    <span className="shrink-0 text-[10px] text-gray-500">(toi)</span>
-                  )}
+                <div className="flex items-center gap-3">
+                  <RankBadge rank={member.rank} />
+                  <span className="flex-1 font-semibold text-white truncate">{member.username}</span>
+                  <span className="tabular-nums text-xl font-bold" style={{ color: '#ffd60a' }}>
+                    {member.uniqueCards}
+                    <span className="ml-0.5 text-xs font-normal text-gray-500"> stickers</span>
+                  </span>
                 </div>
-                <div className="mt-1.5 flex items-center gap-2">
-                  <div className="h-1.5 flex-1 max-w-[120px] overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full rounded-full bg-orange-500" style={{ width: `${member.pct}%` }} />
+                <div className="mt-3 grid grid-cols-4 gap-2 border-t border-white/5 pt-3">
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500">Album</p>
+                    <p className="tabular-nums text-sm font-semibold text-white">{member.pct}&nbsp;%</p>
                   </div>
-                  <span className="text-xs tabular-nums text-gray-500">{member.pct}%</span>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500">Doublons</p>
+                    <p className="tabular-nums text-sm font-semibold text-white">{member.duplicates}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500">Badges</p>
+                    <p className="text-sm font-semibold text-white">{member.badgeCount} 🏅</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500">Trophées</p>
+                    <p className="text-sm font-semibold text-white">{member.trophyCount} 🏆</p>
+                  </div>
                 </div>
               </div>
-              <div className="shrink-0 flex items-center gap-2 text-sm text-gray-500">
-                <span className="flex items-center gap-0.5">{member.badgeCount}<span className="ml-0.5">🏅</span></span>
-                <span className="flex items-center gap-0.5">{member.trophyCount}<span className="ml-0.5">🏆</span></span>
-              </div>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Trophées de la ligue */}

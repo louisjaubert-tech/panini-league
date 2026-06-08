@@ -24,8 +24,8 @@ export default async function HomePage() {
           <Image
             src="/paninilogosansfond.png"
             alt="Panini Club"
-            width={140}
-            height={140}
+            width={200}
+            height={200}
             className="object-contain drop-shadow-2xl"
             priority
           />
@@ -45,34 +45,24 @@ export default async function HomePage() {
         </p>
 
         {/* ── CTA ── */}
-        <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          {isLoggedIn ? (
+        {!isLoggedIn && (
+          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
-              href="/dashboard"
+              href="/register"
               className="rounded-xl px-8 py-3.5 text-base font-bold transition-opacity hover:opacity-90"
               style={{ backgroundColor: '#dc2626', color: '#fff' }}
             >
-              Mon dashboard →
+              S&apos;inscrire
             </Link>
-          ) : (
-            <>
-              <Link
-                href="/register"
-                className="rounded-xl px-8 py-3.5 text-base font-bold transition-opacity hover:opacity-90"
-                style={{ backgroundColor: '#dc2626', color: '#fff' }}
-              >
-                S&apos;inscrire
-              </Link>
-              <Link
-                href="/login"
-                className="rounded-xl border px-8 py-3.5 text-base font-bold text-white transition-colors hover:bg-white/10"
-                style={{ borderColor: 'rgba(255,255,255,0.3)' }}
-              >
-                Se connecter
-              </Link>
-            </>
-          )}
-        </div>
+            <Link
+              href="/login"
+              className="rounded-xl border px-8 py-3.5 text-base font-bold text-white transition-colors hover:bg-white/10"
+              style={{ borderColor: 'rgba(255,255,255,0.3)' }}
+            >
+              Se connecter
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* ── Comment ça marche ── */}
