@@ -281,7 +281,7 @@ export async function POST(request: NextRequest) {
   const blocs: string[] = []
 
   for (const para of allParas) {
-    if (!/\bkg\b/i.test(para.text)) continue
+    if (!/\bkg\b|\d+kg/i.test(para.text)) continue
 
     const DATE_RE = /\d+[-./]\d+[-./]\d{3,4}/
     const dateMatch = DATE_RE.exec(para.text)
