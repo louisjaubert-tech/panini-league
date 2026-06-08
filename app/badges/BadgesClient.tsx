@@ -156,9 +156,9 @@ function NotEarnedCard({ badge }: { badge: BadgeWithProgress }) {
 // ── Export principal ──────────────────────────────────────────────────────────
 
 const EXPLAIN_ENCART = (
-  <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-gray-300 space-y-1">
-    <p>🏅 <span className="font-medium text-white">Les badges</span> récompensent ta progression personnelle — ils dépendent uniquement de ta collection.</p>
-    <p>🏆 <span className="font-medium text-white">Les trophées</span> sont remportés au sein de ta ligue — le premier à remplir la condition dans sa ligue remporte le trophée.</p>
+  <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-gray-300 space-y-2">
+    <p>🏅 <span className="font-medium text-white">Badges</span> — récompensent ta progression personnelle, indépendamment des autres. Plus tu scannes, plus tu les débloques.</p>
+    <p>🏆 <span className="font-medium text-white">Trophées</span> — remportés au sein de ta ligue. Le premier à remplir la condition dans sa ligue remporte le trophée définitivement. Surveille la progression de tes adversaires dans le classement !</p>
   </div>
 )
 

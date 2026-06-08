@@ -246,7 +246,6 @@ function TrophiesSection({
   const earnedIds = useMemo(() => new Set(trophies.map((t) => t.trophy_id)), [trophies])
 
   async function handleTrophyClick(trophy_id: string) {
-    if (earnedIds.has(trophy_id)) return  // déjà remporté → pas de progression
 
     // Toggle
     if (expandedId === trophy_id) {
@@ -300,21 +299,79 @@ function TrophiesSection({
                 const date = new Date(earned.obtained_at).toLocaleDateString('fr-FR', {
                   day: 'numeric', month: 'short', year: 'numeric',
                 })
+                const isExpanded = expandedId === trophy_id
+                const isLoadingThis = loadingTrophy === trophy_id
+                const progressRows = progressCache.get(trophy_id)
+
                 return (
-                  <li
-                    key={trophy_id}
-                    className="flex items-start gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-3"
-                  >
-                    <span className="text-lg shrink-0 mt-0.5">🏆</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white">{name}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Remporté par{' '}
-                        <span style={{ color: '#ffd60a' }}>{earned.username}</span>
-                        {' · '}{date}
-                      </p>
-                    </div>
+                  <li key={trophy_id}>
+                    <button
+                      onClick={() => handleTrophyClick(trophy_id)}
+                      className={`w-full flex items-start gap-3 rounded-xl border border-yellow-500/20 px-4 py-3 text-left transition-colors cursor-pointer ${
+                        isExpanded ? 'bg-yellow-500/10' : 'bg-yellow-500/5 hover:bg-yellow-500/10'
+                      }`}
+                    >
+                      <span className="text-lg shrink-0 mt-0.5">🏆</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-white">{name}</p>
+                          <svg
+                            className={`h-3.5 w-3.5 shrink-0 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                            fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+                        <p className="text-xs mt-1" style={{ color: '#4ade80' }}>
+                          🏆 Remporté par{' '}
+                          <span style={{ color: '#ffd60a' }}>{earned.username}</span>
+                          {' '}le {date}
+                        </p>
+                      </div>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="mt-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 space-y-2">
+                        {isLoadingThis ? (
+                          <p className="text-xs text-gray-500 text-center py-2">Chargement…</p>
+                        ) : progressRows && progressRows.length > 0 ? (
+                          <>
+                            <p className="text-xs font-medium text-gray-500 mb-2">Progression des membres</p>
+                            {progressRows.map((row, idx) => {
+                              const isLeader = idx === 0 && row.progress > 0
+                              return (
+                                <div key={row.userId} className="flex items-center gap-3">
+                                  <span
+                                    className="w-20 shrink-0 truncate text-xs font-medium"
+                                    style={{ color: isLeader ? '#ffd60a' : '#9ca3af' }}
+                                  >
+                                    {isLeader && '⭐ '}{row.username}
+                                  </span>
+                                  <div className="flex-1 h-1.5 overflow-hidden rounded-full bg-white/10">
+                                    <div
+                                      className="h-full rounded-full transition-all duration-500"
+                                      style={{
+                                        width: `${row.progress}%`,
+                                        backgroundColor: isLeader ? '#ffd60a' : '#f97316',
+                                      }}
+                                    />
+                                  </div>
+                                  <span
+                                    className="w-9 shrink-0 text-right text-xs tabular-nums"
+                                    style={{ color: isLeader ? '#ffd60a' : '#6b7280' }}
+                                  >
+                                    {row.progress}%
+                                  </span>
+                                </div>
+                              )
+                            })}
+                          </>
+                        ) : (
+                          <p className="text-xs text-gray-600 text-center py-1">Aucune donnée</p>
+                        )}
+                      </div>
+                    )}
                   </li>
                 )
               }
