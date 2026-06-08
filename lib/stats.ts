@@ -1,13 +1,13 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
-export const TOTAL_STICKERS = 1050
+export const TOTAL_STICKERS = 960
 
 export type UserStats = {
   unique:     number   // lignes dans user_collection
   duplicates: number   // sum(quantity - 1) pour quantity > 1
   countries:  number   // pays distincts possédés
   percentage: number   // unique / TOTAL_STICKERS * 100, arrondi à 1 décimale
-  total:      number   // 1050
+  total:      number   // 960
 }
 
 export async function getUserStats(userId: string): Promise<UserStats> {

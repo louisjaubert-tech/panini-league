@@ -337,6 +337,10 @@ export default function ScanClient() {
           📸 Prends une photo ici ou dépose plusieurs photos d&apos;un coup si tu les as déjà prises.
           Chaque photo est analysée automatiquement.
         </p>
+        <p className="mt-2 rounded-xl bg-white/5 px-4 py-3 text-xs text-gray-500">
+          ℹ️ Seuls les stickers portraits de joueurs sont reconnus. Les stickers de photos d&apos;équipes,
+          logos de sélections nationales et pages spéciales ne sont pas comptabilisés pour l&apos;instant.
+        </p>
       </div>
 
       {/* ── Phase : traitement en cours ── */}

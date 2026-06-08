@@ -235,7 +235,7 @@ export async function fetchTrophyProgress(
   function computeProgress(owned: Set<string>): number {
     switch (trophyId) {
       case 'lt01': {
-        return Math.min(100, Math.round((owned.size / 1050) * 100))
+        return Math.min(100, Math.round((owned.size / 960) * 100))
       }
       case 'lt02': {
         // Max % de complétion d'une équipe

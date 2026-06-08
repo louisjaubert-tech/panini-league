@@ -217,7 +217,7 @@ function GeneralTab({ initial }: { initial: LeaderboardRow[] }) {
 // ── Section trophées de la ligue ─────────────────────────────────────────────
 
 const ALL_TROPHIES = [
-  { trophy_id: 'lt01', name: 'Trophée Platine',                    description: "Premier à compléter l'album entier (1050 stickers)" },
+  { trophy_id: 'lt01', name: 'Trophée Platine',                    description: "Premier à compléter l'album entier (960 stickers)" },
   { trophy_id: 'lt02', name: 'Trophée du Pionnier',                description: 'Premier à compléter une équipe nationale entière' },
   { trophy_id: 'lt03', name: 'Trophée Jules Rimet',                description: "Premier à avoir les 4 stickers de l'Histoire de la Coupe du Monde (106, 107, 108, 109)" },
   { trophy_id: 'lt04', name: 'Trophée La France',                  description: "Premier à compléter la double page de l'équipe de France" },

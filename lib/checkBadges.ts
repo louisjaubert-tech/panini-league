@@ -235,7 +235,7 @@ function checkTrophyCondition(
 ): boolean {
   switch (trophy_id) {
     case 'lt01':
-      return owned.size >= 1050
+      return owned.size >= 960
 
     case 'lt02': {
       // Au moins une équipe nationale complète
