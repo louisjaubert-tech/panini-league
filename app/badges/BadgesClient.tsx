@@ -1,7 +1,5 @@
 'use client'
 
-import { useState } from 'react'
-
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type BadgeWithProgress = {
@@ -106,7 +104,7 @@ function BadgeIcon({ earned, progress }: { earned: boolean; progress: number }) 
   )
 }
 
-// ── Carte badge obtenu ────────────────────────────────────────────────────────
+// ── Cartes ────────────────────────────────────────────────────────────────────
 
 function EarnedCard({ badge }: { badge: BadgeWithProgress }) {
   const date = badge.obtained_at
@@ -130,94 +128,52 @@ function EarnedCard({ badge }: { badge: BadgeWithProgress }) {
   )
 }
 
-// ── Carte badge en progression ────────────────────────────────────────────────
+function NotEarnedCard({ badge }: { badge: BadgeWithProgress }) {
+  const hasProgress = badge.progress > 0
 
-function ProgressCard({ badge }: { badge: BadgeWithProgress }) {
   return (
-    <li className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
+    <li className={`flex items-start gap-4 rounded-2xl border px-5 py-4 ${
+      hasProgress
+        ? 'border-white/10 bg-white/5'
+        : 'border-white/5 bg-white/[0.03] opacity-50'
+    }`}>
       <BadgeIcon earned={false} progress={badge.progress} />
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-white">{badge.name}</span>
-          <StarRating badge_id={badge.badge_id} />
-        </div>
-        <p className="mt-0.5 text-xs text-gray-400">{getDescription(badge)}</p>
-        <ProgressBar pct={badge.progress} />
-      </div>
-    </li>
-  )
-}
-
-// ── Carte badge verrouillé ────────────────────────────────────────────────────
-
-function LockedCard({ badge }: { badge: BadgeWithProgress }) {
-  return (
-    <li className="flex items-start gap-4 rounded-2xl border border-white/5 bg-white/[0.03] px-5 py-4 opacity-50">
-      <BadgeIcon earned={false} progress={0} />
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-gray-400">{badge.name}</span>
-          <StarRating badge_id={badge.badge_id} />
-        </div>
-        <p className="mt-0.5 text-xs text-gray-600">{getDescription(badge)}</p>
-      </div>
-    </li>
-  )
-}
-
-// ── Section avec collapse ─────────────────────────────────────────────────────
-
-function Section({
-  title,
-  count,
-  defaultOpen = true,
-  children,
-}: {
-  title: string
-  count: number
-  defaultOpen?: boolean
-  children: React.ReactNode
-}) {
-  const [open, setOpen] = useState(defaultOpen)
-
-  return (
-    <section>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-3 mb-3 group"
-      >
-        <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold text-white">{title}</h2>
-          <span
-            className="rounded-full px-2 py-0.5 text-xs font-bold"
-            style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#9ca3af' }}
-          >
-            {count}
+          <span className={`font-semibold ${hasProgress ? 'text-white' : 'text-gray-400'}`}>
+            {badge.name}
           </span>
+          <StarRating badge_id={badge.badge_id} />
         </div>
-        <svg
-          className={`h-4 w-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`}
-          fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {open && children}
-    </section>
+        <p className={`mt-0.5 text-xs ${hasProgress ? 'text-gray-400' : 'text-gray-600'}`}>
+          {getDescription(badge)}
+        </p>
+        {hasProgress && <ProgressBar pct={badge.progress} />}
+      </div>
+    </li>
   )
 }
 
 // ── Export principal ──────────────────────────────────────────────────────────
 
 export default function BadgesClient({ badges }: { badges: BadgeWithProgress[] }) {
-  const earned    = sortByStars(badges.filter((b) => b.earned))
-  const inProgress = sortByStars(badges.filter((b) => !b.earned && b.progress > 0))
-  const locked    = sortByStars(badges.filter((b) => !b.earned && b.progress === 0))
+  const earned   = sortByStars(badges.filter((b) => b.earned))
+  const notEarned = sortByStars(badges.filter((b) => !b.earned))
 
   return (
     <div className="space-y-8">
+
       {/* Badges obtenus */}
-      <Section title="🏅 Badges obtenus" count={earned.length}>
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-base font-semibold text-white">🏅 Badges obtenus</h2>
+          <span
+            className="rounded-full px-2 py-0.5 text-xs font-bold"
+            style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#9ca3af' }}
+          >
+            {earned.length}
+          </span>
+        </div>
         {earned.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-gray-600">
             Aucun badge encore obtenu.
@@ -227,33 +183,30 @@ export default function BadgesClient({ badges }: { badges: BadgeWithProgress[] }
             {earned.map((b) => <EarnedCard key={b.badge_id} badge={b} />)}
           </ul>
         )}
-      </Section>
+      </section>
 
-      {/* En progression */}
-      <Section title="⏳ En progression" count={inProgress.length}>
-        {inProgress.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-gray-600">
-            Commence à scanner des stickers pour débloquer des progressions.
-          </div>
-        ) : (
-          <ul className="space-y-3">
-            {inProgress.map((b) => <ProgressCard key={b.badge_id} badge={b} />)}
-          </ul>
-        )}
-      </Section>
-
-      {/* Verrouillés */}
-      <Section title="🔒 Badges verrouillés" count={locked.length} defaultOpen={false}>
-        {locked.length === 0 ? (
+      {/* En progression + verrouillés */}
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-base font-semibold text-white">⏳ En progression</h2>
+          <span
+            className="rounded-full px-2 py-0.5 text-xs font-bold"
+            style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#9ca3af' }}
+          >
+            {notEarned.length}
+          </span>
+        </div>
+        {notEarned.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-gray-600">
             Tous les badges sont débloqués !
           </div>
         ) : (
-          <ul className="space-y-2">
-            {locked.map((b) => <LockedCard key={b.badge_id} badge={b} />)}
+          <ul className="space-y-3">
+            {notEarned.map((b) => <NotEarnedCard key={b.badge_id} badge={b} />)}
           </ul>
         )}
-      </Section>
+      </section>
+
     </div>
   )
 }
