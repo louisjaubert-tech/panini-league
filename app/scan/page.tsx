@@ -33,11 +33,14 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function RecentBlisters({ packs }: { packs: PackRow[] }) {
-  if (packs.length === 0) return null
-
   return (
     <section className="mt-12">
       <h2 className="mb-4 text-base font-semibold text-white">📸 Derniers blisters scannés</h2>
+      {packs.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-white/15 px-6 py-10 text-center text-sm text-gray-500">
+          Aucun blister scanné pour l&apos;instant. Lance-toi&nbsp;!&nbsp;📸
+        </div>
+      ) : (
       <ul className="space-y-2">
         {packs.map((pack) => (
           <li
@@ -85,6 +88,7 @@ function RecentBlisters({ packs }: { packs: PackRow[] }) {
           </li>
         ))}
       </ul>
+      )}
     </section>
   )
 }

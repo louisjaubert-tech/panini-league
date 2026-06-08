@@ -87,11 +87,9 @@ export default function DashboardClient({
       </section>
 
       {/* ── Mes badges (pleine largeur, deux colonnes côte à côte) ── */}
-      {badges.length > 0 && (
-        <section>
-          <BadgesClient badges={badges} sideLayout />
-        </section>
-      )}
+      <section>
+        <BadgesClient badges={badges} sideLayout />
+      </section>
 
     </div>
   )

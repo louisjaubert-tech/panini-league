@@ -162,8 +162,8 @@ export default async function DashboardPage() {
     }
   })
 
-  // On n'affiche que les badges obtenus ou en progression (progress > 0)
-  const visibleBadges = badges.filter((b) => b.earned || b.progress > 0)
+  // Tous les badges sont toujours affichés, même progress = 0 pour un nouveau compte
+  const visibleBadges = badges
 
   return (
     <main className="min-h-screen bg-[#0a1628] px-4 sm:px-6 lg:px-8 py-10">
