@@ -204,28 +204,8 @@ export async function matchStickers(
       console.log('[matchStickers] scanned_stickers insert OK →', JSON.stringify(scanData))
     }
 
-    if (status === 'matched' && sticker_id) {
-      if (is_duplicate) {
-        const { data: existing } = await supabaseAdmin
-          .from('user_collection')
-          .select('id, quantity')
-          .eq('user_id', userId)
-          .eq('sticker_id', sticker_id)
-          .single()
-
-        if (existing) {
-          await supabaseAdmin
-            .from('user_collection')
-            .update({ quantity: (existing.quantity as number) + 1 })
-            .eq('id', existing.id)
-        }
-      } else {
-        await supabaseAdmin
-          .from('user_collection')
-          .insert({ user_id: userId, sticker_id, quantity: 1, first_obtained_at: new Date().toISOString() })
-        ownedIds.add(sticker_id)
-      }
-    }
+    // NOTE : l'écriture dans user_collection est différée jusqu'à confirm-scan
+    // (l'utilisateur doit confirmer avant que les stickers soient ajoutés)
 
     results.push({
       sticker_id,

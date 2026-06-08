@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import sharp from 'sharp'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { matchStickers } from '@/lib/matchSticker'
-import { checkBadges, checkLeagueTrophies, type NewTrophy } from '@/lib/checkBadges'
 
 // ════════════════════════════════════════════════════════════
 // Helpers Vision — extraction des paragraphes avec coordonnées
@@ -332,44 +331,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 })
   }
 
-  // ── 7. Mettre à jour ocr_status = 'done' ─────────────────
+  // ── 7. Mettre à jour ocr_status = 'pending_confirmation' ────
   const { error: updateErr } = await supabaseAdmin
     .from('pack_openings')
-    .update({ ocr_status: 'done' })
+    .update({ ocr_status: 'pending_confirmation' })
     .eq('id', pack_id)
 
   if (updateErr) {
     console.error('[scan-process] pack_openings update:', updateErr.message)
   }
 
-  // ── 8. Vérification des badges (appel direct, sans HTTP) ──
-  let new_badges: unknown[] = []
-  try {
-    const badgesResult = await checkBadges(user_id as string)
-    new_badges = badgesResult.new_badges
-  } catch (err) {
-    console.error('[scan-process] checkBadges:', err instanceof Error ? err.message : err)
-  }
-
-  // ── 9. Vérification des trophées de ligue ─────────────────
-  let new_trophies: NewTrophy[] = []
-  try {
-    const { data: memberships } = await supabaseAdmin
-      .from('league_members')
-      .select('league_id')
-      .eq('user_id', user_id)
-
-    const leagueIds = (memberships ?? []).map((m) => m.league_id as string)
-
-    const trophyResults = await Promise.all(
-      leagueIds.map((leagueId) => checkLeagueTrophies(user_id as string, leagueId)),
-    )
-
-    new_trophies = trophyResults.flat()
-  } catch (err) {
-    console.error('[scan-process] checkLeagueTrophies:', err instanceof Error ? err.message : err)
-  }
-
-  // ── 10. Réponse ───────────────────────────────────────────
-  return NextResponse.json({ stickers, new_badges, new_trophies })
+  // ── 8. Réponse (badges/trophées différés jusqu'à confirm-scan) ──
+  return NextResponse.json({ pack_id, stickers })
 }

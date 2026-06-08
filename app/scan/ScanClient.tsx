@@ -54,10 +54,11 @@ type StickerResult = {
 type Badge  = { badge_id: string; name: string; points?: number }
 type Trophy = { trophy_id: string; name: string }
 
-type ScanResult = { stickers: StickerResult[]; new_badges: Badge[]; new_trophies?: Trophy[] }
+// scan-process retourne maintenant juste { pack_id, stickers }
+type ScanResult = { pack_id: string; stickers: StickerResult[] }
 
 type PhotoStatus = {
-  index: number          // 1-based
+  index: number
   name: string
   phase: 'waiting' | 'uploading' | 'analyzing' | 'done' | 'failed'
   error?: string
@@ -66,8 +67,8 @@ type PhotoStatus = {
 
 type AccumulatedResults = {
   stickers: StickerResult[]
-  new_badges: Badge[]
-  new_trophies: Trophy[]
+  packIds: string[]        // un par photo réussie — utilisés pour confirm/cancel
+  userId: string
   failedCount: number
   successCount: number
 }
@@ -84,39 +85,128 @@ function Spinner({ size = 5 }: { size?: number }) {
 }
 
 function phaseIcon(phase: PhotoStatus['phase']) {
-  if (phase === 'done')     return <span className="text-green-400">✓</span>
-  if (phase === 'failed')   return <span className="text-red-400">⚠️</span>
-  if (phase === 'waiting')  return <span className="text-gray-600">○</span>
+  if (phase === 'done')    return <span className="text-green-400">✓</span>
+  if (phase === 'failed')  return <span className="text-red-400">⚠️</span>
+  if (phase === 'waiting') return <span className="text-gray-600">○</span>
   return <Spinner size={3} />
 }
 
-// ── Modale résultats cumulés ──────────────────────────────────────────────────
+/** Tri alphabétique par nom de famille (dernier mot du display_name) */
+function sortByLastName(stickers: StickerResult[]): StickerResult[] {
+  return [...stickers].sort((a, b) => {
+    const lastName = (s: StickerResult) =>
+      (s.display_name ?? '').split(' ').pop()?.toLowerCase() ?? ''
+    return lastName(a).localeCompare(lastName(b), 'fr')
+  })
+}
 
-function ResultsModal({ results, onClose }: { results: AccumulatedResults; onClose: () => void }) {
-  const matched      = results.stickers.filter(s => s.status === 'matched')
+// ── Modale résultats ──────────────────────────────────────────────────────────
+
+type ModalPhase = 'review' | 'confirming' | 'cancelling' | 'confirmed'
+
+function ResultsModal({
+  results,
+  onDone,
+}: {
+  results: AccumulatedResults
+  onDone: () => void
+}) {
+  const [phase, setPhase]           = useState<ModalPhase>('review')
+  const [newBadges, setNewBadges]   = useState<Badge[]>([])
+  const [newTrophies, setNewTrophies] = useState<Trophy[]>([])
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  const matched      = sortByLastName(results.stickers.filter(s => s.status === 'matched'))
   const unrecognised = results.stickers.filter(s => s.status !== 'matched')
+
+  async function handleConfirm() {
+    setPhase('confirming')
+    setActionError(null)
+
+    // Confirmer tous les packs en séquence
+    const allBadges: Badge[] = []
+    const allTrophies: Trophy[] = []
+
+    for (const packId of results.packIds) {
+      try {
+        const res = await fetch('/api/confirm-scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pack_id: packId, user_id: results.userId }),
+        })
+        const data = await res.json()
+        if (data.new_badges)  allBadges.push(...data.new_badges)
+        if (data.new_trophies) allTrophies.push(...data.new_trophies)
+      } catch (err) {
+        console.error('[confirm-scan]', err)
+      }
+    }
+
+    // Dédupliquer
+    const seenB = new Set<string>()
+    const seenT = new Set<string>()
+    const dedupedBadges  = allBadges.filter(b => seenB.has(b.badge_id) ? false : (seenB.add(b.badge_id), true))
+    const dedupedTrophies = allTrophies.filter(t => seenT.has(t.trophy_id) ? false : (seenT.add(t.trophy_id), true))
+
+    setNewBadges(dedupedBadges)
+    setNewTrophies(dedupedTrophies)
+    setPhase('confirmed')
+  }
+
+  async function handleCancel() {
+    setPhase('cancelling')
+    for (const packId of results.packIds) {
+      try {
+        await fetch('/api/cancel-scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pack_id: packId }),
+        })
+      } catch (err) {
+        console.error('[cancel-scan]', err)
+      }
+    }
+    onDone()
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0f1e35] shadow-xl">
 
+        {/* ── En-tête ── */}
         <div className="p-6 border-b border-white/10">
-          <h2 className="text-xl font-bold text-white">
-            {matched.length} sticker{matched.length !== 1 ? 's' : ''} reconnu{matched.length !== 1 ? 's' : ''} !
-          </h2>
-          <p className="mt-1 text-xs text-gray-500">
-            Sur {results.successCount} photo{results.successCount !== 1 ? 's' : ''} analysée{results.successCount !== 1 ? 's' : ''}
-            {results.failedCount > 0 && (
-              <span className="ml-1 text-red-400">· {results.failedCount} échouée{results.failedCount > 1 ? 's' : ''}</span>
-            )}
-          </p>
+          {phase === 'confirmed' ? (
+            <>
+              <h2 className="text-xl font-bold text-white">
+                {matched.length} sticker{matched.length !== 1 ? 's' : ''} ajouté{matched.length !== 1 ? 's' : ''} ! ✅
+              </h2>
+              <p className="mt-1 text-xs text-gray-500">
+                Ta collection a été mise à jour.
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-bold text-white">
+                {matched.length} sticker{matched.length !== 1 ? 's' : ''} reconnu{matched.length !== 1 ? 's' : ''} !
+              </h2>
+              <p className="mt-1 text-xs text-gray-500">
+                Sur {results.successCount} photo{results.successCount !== 1 ? 's' : ''} analysée{results.successCount !== 1 ? 's' : ''}
+                {results.failedCount > 0 && (
+                  <span className="ml-1 text-red-400">· {results.failedCount} échouée{results.failedCount > 1 ? 's' : ''}</span>
+                )}
+              </p>
+            </>
+          )}
         </div>
 
-        <div className="max-h-[55vh] overflow-y-auto p-6 space-y-6">
+        {/* ── Corps ── */}
+        <div className="max-h-[50vh] overflow-y-auto p-6 space-y-6">
+
+          {/* Liste stickers reconnus */}
           {matched.length > 0 && (
             <ul className="space-y-2">
               {matched.map((s, i) => (
-                <li key={i} className="flex items-center justify-between rounded-xl bg-white/5 px-4 py-3">
+                <li key={i} className="flex items-center justify-between rounded-xl bg-white/5 px-4 py-2.5">
                   <span className="text-sm font-medium text-white">{s.display_name}</span>
                   {s.is_duplicate && (
                     <span className="ml-2 shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
@@ -134,11 +224,12 @@ function ResultsModal({ results, onClose }: { results: AccumulatedResults; onClo
             </div>
           )}
 
-          {results.new_badges.length > 0 && (
+          {/* Badges/trophées (phase confirmée uniquement) */}
+          {phase === 'confirmed' && newBadges.length > 0 && (
             <div>
               <p className="mb-3 font-semibold text-white">🏅 Badges débloqués !</p>
               <ul className="space-y-2">
-                {results.new_badges.map((b) => (
+                {newBadges.map((b) => (
                   <li key={b.badge_id} className="flex items-center justify-between rounded-xl bg-yellow-400/10 px-4 py-3">
                     <span className="text-sm font-medium text-white">{b.name}</span>
                     <InlineStars badge_id={b.badge_id} />
@@ -148,11 +239,11 @@ function ResultsModal({ results, onClose }: { results: AccumulatedResults; onClo
             </div>
           )}
 
-          {(results.new_trophies ?? []).length > 0 && (
+          {phase === 'confirmed' && newTrophies.length > 0 && (
             <div>
               <p className="mb-3 font-semibold text-white">🏆 Trophées débloqués !</p>
               <ul className="space-y-2">
-                {results.new_trophies.map((t) => (
+                {newTrophies.map((t) => (
                   <li key={t.trophy_id} className="rounded-xl bg-yellow-400/10 px-4 py-3 text-sm font-medium text-white">
                     {t.name}
                   </li>
@@ -160,15 +251,48 @@ function ResultsModal({ results, onClose }: { results: AccumulatedResults; onClo
               </ul>
             </div>
           )}
+
+          {actionError && (
+            <p className="rounded-lg bg-red-900/40 border border-red-700/50 px-3 py-2 text-sm text-red-300">
+              {actionError}
+            </p>
+          )}
         </div>
 
-        <div className="p-6 border-t border-white/10">
-          <button
-            onClick={onClose}
-            className="w-full rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-400 transition-colors"
-          >
-            Scanner d&apos;autres blisters
-          </button>
+        {/* ── Footer avec boutons ── */}
+        <div className="p-6 border-t border-white/10 space-y-2">
+          {phase === 'review' && (
+            <>
+              <button
+                onClick={handleConfirm}
+                className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition-colors"
+              >
+                ✅ Confirmer — ajouter {matched.length} sticker{matched.length !== 1 ? 's' : ''} à ma collection
+              </button>
+              <button
+                onClick={handleCancel}
+                className="w-full rounded-lg border border-white/15 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/10 transition-colors"
+              >
+                ❌ Annuler
+              </button>
+            </>
+          )}
+
+          {(phase === 'confirming' || phase === 'cancelling') && (
+            <div className="flex items-center justify-center gap-3 py-2 text-sm text-gray-400">
+              <Spinner size={4} />
+              {phase === 'confirming' ? 'Enregistrement en cours…' : 'Annulation en cours…'}
+            </div>
+          )}
+
+          {phase === 'confirmed' && (
+            <button
+              onClick={onDone}
+              className="w-full rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-400 transition-colors"
+            >
+              Scanner d&apos;autres stickers
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -182,16 +306,16 @@ export default function ScanClient() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Sélection
-  const [files, setFiles] = useState<File[]>([])
+  const [files, setFiles]     = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
 
   // Traitement
-  const [processing, setProcessing] = useState(false)
+  const [processing, setProcessing]   = useState(false)
   const [photoStatuses, setPhotoStatuses] = useState<PhotoStatus[]>([])
-  const [currentIdx, setCurrentIdx] = useState(0) // 0-based
+  const [currentIdx, setCurrentIdx]   = useState(0)
 
-  // Résultats
-  const [results, setResults] = useState<AccumulatedResults | null>(null)
+  // Résultats (en attente de confirmation)
+  const [results, setResults]       = useState<AccumulatedResults | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
 
   function handleFilesSelected(selected: FileList | null) {
@@ -214,6 +338,7 @@ export default function ScanClient() {
     setResults(null)
     setUploadError(null)
     if (inputRef.current) inputRef.current.value = ''
+    router.refresh()
   }
 
   function updateStatus(idx: number, patch: Partial<PhotoStatus>) {
@@ -236,8 +361,8 @@ export default function ScanClient() {
 
     const accumulated: AccumulatedResults = {
       stickers: [],
-      new_badges: [],
-      new_trophies: [],
+      packIds: [],
+      userId: '',
       failedCount: 0,
       successCount: 0,
     }
@@ -246,7 +371,7 @@ export default function ScanClient() {
       setCurrentIdx(i)
       const file = files[i]
 
-      // ── 1. Upload ──────────────────────────────────────────────────
+      // ── 1. Upload ──────────────────────────────────────────
       updateStatus(i, { phase: 'uploading' })
 
       const fd = new FormData()
@@ -263,13 +388,14 @@ export default function ScanClient() {
         }
         packId = uploadResult.pack_id
         userId = uploadResult.user_id
+        if (!accumulated.userId) accumulated.userId = userId
       } catch (err) {
         updateStatus(i, { phase: 'failed', error: err instanceof Error ? err.message : 'Erreur upload' })
         accumulated.failedCount++
         continue
       }
 
-      // ── 2. Analyse IA ──────────────────────────────────────────────
+      // ── 2. Analyse IA ──────────────────────────────────────
       updateStatus(i, { phase: 'analyzing' })
 
       try {
@@ -280,19 +406,18 @@ export default function ScanClient() {
         })
 
         if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          throw new Error(err.error ?? `HTTP ${res.status}`)
+          const errData = await res.json().catch(() => ({}))
+          throw new Error(errData.error ?? `HTTP ${res.status}`)
         }
 
         const data = await res.json() as ScanResult
-        const matched = data.stickers.filter(s => s.status === 'matched')
+        const matchedCount = data.stickers.filter(s => s.status === 'matched').length
 
         accumulated.stickers.push(...data.stickers)
-        accumulated.new_badges.push(...(data.new_badges ?? []))
-        accumulated.new_trophies!.push(...(data.new_trophies ?? []))
+        accumulated.packIds.push(packId)
         accumulated.successCount++
 
-        updateStatus(i, { phase: 'done', stickerCount: matched.length })
+        updateStatus(i, { phase: 'done', stickerCount: matchedCount })
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Analyse échouée'
         updateStatus(i, { phase: 'failed', error: msg })
@@ -300,25 +425,8 @@ export default function ScanClient() {
       }
     }
 
-    // Dédupliquer badges/trophées (même badge peut arriver plusieurs fois)
-    const seenBadges = new Set<string>()
-    accumulated.new_badges = accumulated.new_badges.filter((b) => {
-      if (seenBadges.has(b.badge_id)) return false
-      seenBadges.add(b.badge_id)
-      return true
-    })
-    const seenTrophies = new Set<string>()
-    accumulated.new_trophies = accumulated.new_trophies!.filter((t) => {
-      if (seenTrophies.has(t.trophy_id)) return false
-      seenTrophies.add(t.trophy_id)
-      return true
-    })
-
     setResults(accumulated)
     setProcessing(false)
-
-    // Recharge le Server Component pour mettre à jour "Derniers blisters scannés"
-    router.refresh()
   }
 
   const total = files.length
@@ -332,7 +440,7 @@ export default function ScanClient() {
     <div>
       {/* En-tête */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Scanner un blister</h1>
+        <h1 className="text-2xl font-bold text-white">Scanner des stickers</h1>
         <p className="mt-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-gray-300">
           📸 Prends une photo ici ou dépose plusieurs photos d&apos;un coup si tu les as déjà prises.
           Chaque photo est analysée automatiquement.
@@ -346,7 +454,6 @@ export default function ScanClient() {
       {/* ── Phase : traitement en cours ── */}
       {processing && (
         <div className="space-y-5">
-          {/* Titre + barre globale */}
           <div className="rounded-2xl border border-orange-500/30 bg-orange-500/10 px-5 py-4 space-y-3">
             <div className="flex items-center gap-3">
               <Spinner size={4} />
@@ -369,15 +476,14 @@ export default function ScanClient() {
             </div>
           </div>
 
-          {/* Log des photos */}
           <ul className="space-y-1.5">
             {photoStatuses.map((s) => (
               <li
                 key={s.index}
                 className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm transition-colors ${
-                  s.phase === 'done'     ? 'bg-green-500/10 border border-green-500/20' :
-                  s.phase === 'failed'  ? 'bg-red-500/10 border border-red-500/20' :
-                  s.phase === 'waiting' ? 'bg-white/[0.03] border border-white/5' :
+                  s.phase === 'done'    ? 'bg-green-500/10 border border-green-500/20' :
+                  s.phase === 'failed' ? 'bg-red-500/10 border border-red-500/20' :
+                  s.phase === 'waiting'? 'bg-white/[0.03] border border-white/5' :
                   'bg-orange-500/10 border border-orange-500/20'
                 }`}
               >
@@ -400,7 +506,6 @@ export default function ScanClient() {
       {/* ── Phase : sélection + preview ── */}
       {!processing && !results && (
         <div className="space-y-5">
-          {/* Input caché — multiple, sans capture pour permettre la galerie */}
           <input
             ref={inputRef}
             type="file"
@@ -411,7 +516,6 @@ export default function ScanClient() {
           />
 
           {files.length === 0 ? (
-            /* Zone de dépôt */
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
@@ -429,7 +533,6 @@ export default function ScanClient() {
               </div>
             </button>
           ) : (
-            /* Preview des photos sélectionnées */
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-white">
@@ -443,22 +546,13 @@ export default function ScanClient() {
                 </button>
               </div>
 
-              {/* Grille de miniatures */}
               <div className={`grid gap-2 ${files.length === 1 ? 'grid-cols-1' : 'grid-cols-3 sm:grid-cols-4'}`}>
                 {previews.map((url, i) => (
                   <div
                     key={i}
-                    className={`relative overflow-hidden rounded-xl border border-white/10 bg-white/5 ${
-                      files.length === 1 ? 'h-48' : 'h-24'
-                    }`}
+                    className={`relative overflow-hidden rounded-xl border border-white/10 bg-white/5 ${files.length === 1 ? 'h-48' : 'h-24'}`}
                   >
-                    <Image
-                      src={url}
-                      alt={`Photo ${i + 1}`}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
+                    <Image src={url} alt={`Photo ${i + 1}`} fill className="object-cover" unoptimized />
                   </div>
                 ))}
               </div>
@@ -470,16 +564,12 @@ export default function ScanClient() {
               )}
 
               <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleReset}
+                <button type="button" onClick={handleReset}
                   className="flex-1 rounded-lg border border-white/15 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/10 transition-colors"
                 >
                   Annuler
                 </button>
-                <button
-                  type="button"
-                  onClick={handleAnalyze}
+                <button type="button" onClick={handleAnalyze}
                   className="flex-1 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-400 transition-colors"
                 >
                   Analyser {files.length > 1 ? `${files.length} photos` : 'la photo'}
@@ -490,10 +580,9 @@ export default function ScanClient() {
         </div>
       )}
 
-      {/* ── Résultats après traitement ── */}
+      {/* ── Résultats après traitement — log visible derrière la modale ── */}
       {!processing && results && (
         <>
-          {/* Résumé du traitement visible derrière la modale */}
           <div className="space-y-1.5 mb-4">
             {photoStatuses.map((s) => (
               <div
@@ -514,7 +603,7 @@ export default function ScanClient() {
               </div>
             ))}
           </div>
-          <ResultsModal results={results} onClose={handleReset} />
+          <ResultsModal results={results} onDone={handleReset} />
         </>
       )}
     </div>
