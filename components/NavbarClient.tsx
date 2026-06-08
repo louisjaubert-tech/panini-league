@@ -12,8 +12,8 @@ const NAV_GROUP1 = [
 ]
 
 const NAV_GROUP2 = [
-  { href: '/echanges',    label: '🔄 Échanges'   },
   { href: '/leagues',     label: '👥 Ligues'      },
+  { href: '/echanges',    label: '🔄 Échanges'   },
   { href: '/leaderboard', label: '🏆 Classement'  },
 ]
 
@@ -21,8 +21,8 @@ const MOBILE_LINKS = [
   { href: '/scan',        label: '📷 ScanPhoto'    },
   { href: '/dashboard',   label: '📊 Mes stats'    },
   { href: '/collection',  label: '🃏 Ma collection' },
-  { href: '/echanges',    label: '🔄 Échanges'     },
   { href: '/leagues',     label: '👥 Ligues'        },
+  { href: '/echanges',    label: '🔄 Échanges'     },
   { href: '/leaderboard', label: '🏆 Classement'   },
 ]
 

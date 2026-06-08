@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { supabase as supabaseBrowser } from '@/lib/supabase'
-import { fetchDashboardData, type DashboardData, type Badge, type PackOpening } from '@/app/actions/dashboard'
+import { fetchDashboardData, type DashboardData, type PackOpening } from '@/app/actions/dashboard'
 import BadgesClient, { type BadgeWithProgress } from '@/app/badges/BadgesClient'
 
 function OcrBadge({ status }: { status: string }) {
@@ -50,7 +50,7 @@ export default function DashboardClient({
     return () => { supabaseBrowser.removeChannel(channel) }
   }, [userId, refresh])
 
-  const { uniqueCards, totalReference, completionPct, duplicates, countries, recentBadges, recentPacks, totalPacks } = data
+  const { uniqueCards, totalReference, completionPct, duplicates, countries, recentPacks, totalPacks } = data
   const earnedBadgesCount = badges.filter((b) => b.earned).length
 
   return (
@@ -102,36 +102,24 @@ export default function DashboardClient({
         </div>
       </section>
 
-      {/* ── Derniers badges + blisters ── */}
-      <div className="grid gap-8 lg:grid-cols-2">
-        {/* Derniers badges */}
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-white">Derniers badges</h2>
-          {recentBadges.length === 0 ? (
+      {/* ── Bas de page : badges (2/3) + blisters (1/3) ── */}
+      <div className="grid gap-8 lg:grid-cols-3">
+
+        {/* Colonne gauche : badges (2/3) */}
+        <section className="lg:col-span-2">
+          <h2 className="mb-6 text-lg font-semibold text-white">🏅 Mes badges</h2>
+          {badges.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-white/15 p-8 text-center text-sm text-gray-500">
-              Aucun badge débloqué pour l&apos;instant
+              Aucun badge débloqué ou en cours pour l&apos;instant
             </div>
           ) : (
-            <ul className="space-y-3">
-              {recentBadges.map((badge: Badge) => (
-                <li key={badge.badge_id} className="flex items-center gap-4 rounded-2xl bg-white/10 border border-white/10 px-5 py-4">
-                  <span className="text-3xl leading-none" role="img" aria-label={badge.name}>🏅</span>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-white truncate">{badge.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{badge.description}</p>
-                  </div>
-                  <time className="ml-auto shrink-0 text-xs text-gray-500 tabular-nums">
-                    {new Date(badge.obtained_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
-                  </time>
-                </li>
-              ))}
-            </ul>
+            <BadgesClient badges={badges} />
           )}
         </section>
 
-        {/* Derniers blisters */}
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-white">Derniers blisters</h2>
+        {/* Colonne droite : derniers blisters (1/3) */}
+        <section className="lg:col-span-1">
+          <h2 className="mb-4 text-lg font-semibold text-white">📸 Derniers blisters</h2>
           {recentPacks.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-white/15 p-8 text-center text-sm text-gray-500">
               Aucun blister scanné pour l&apos;instant
@@ -166,15 +154,8 @@ export default function DashboardClient({
             </ul>
           )}
         </section>
-      </div>
 
-      {/* ── Mes badges ── */}
-      {badges.length > 0 && (
-        <section>
-          <h2 className="mb-6 text-lg font-semibold text-white">🏅 Mes badges</h2>
-          <BadgesClient badges={badges} />
-        </section>
-      )}
+      </div>
 
     </div>
   )
