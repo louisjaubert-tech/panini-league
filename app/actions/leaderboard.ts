@@ -178,6 +178,127 @@ export type LeagueTrophyRow = {
   obtained_at: string
 }
 
+// ── fetchTrophyProgress ───────────────────────────────────────────────────────
+
+export type TrophyProgressRow = {
+  userId: string
+  username: string
+  progress: number  // 0–100, arrondi
+}
+
+export async function fetchTrophyProgress(
+  leagueId: string,
+  trophyId: string,
+): Promise<TrophyProgressRow[]> {
+  // 1. Membres de la ligue
+  const { data: memberRows } = await supabaseAdmin
+    .from('league_members')
+    .select('user_id')
+    .eq('league_id', leagueId)
+
+  const memberIds = (memberRows ?? []).map((m) => m.user_id as string)
+  if (memberIds.length === 0) return []
+
+  // 2. Profils (usernames)
+  const { data: profileRows } = await supabaseAdmin
+    .from('profiles')
+    .select('id, username')
+    .in('id', memberIds)
+
+  const profileMap = new Map(
+    (profileRows ?? []).map((p) => [p.id as string, p.username as string ?? 'Joueur'])
+  )
+
+  // 3. Collections de tous les membres
+  const { data: collRows } = await supabaseAdmin
+    .from('user_collection')
+    .select('user_id, sticker_id')
+    .in('user_id', memberIds)
+
+  // Construire un Map userId → Set<sticker_id>
+  const collMap = new Map<string, Set<string>>()
+  for (const uid of memberIds) collMap.set(uid, new Set())
+  for (const r of collRows ?? []) {
+    collMap.get(r.user_id as string)?.add(r.sticker_id as string)
+  }
+
+  // 4. Référence stickers (utile pour lt02 et lt04)
+  let refRows: { sticker_id: string; country: string }[] = []
+  if (trophyId === 'lt02' || trophyId === 'lt04') {
+    const { data } = await supabaseAdmin
+      .from('stickers_reference')
+      .select('sticker_id, country')
+    refRows = (data ?? []) as { sticker_id: string; country: string }[]
+  }
+
+  // 5. Calcul du % par membre
+  function computeProgress(owned: Set<string>): number {
+    switch (trophyId) {
+      case 'lt01': {
+        return Math.min(100, Math.round((owned.size / 1050) * 100))
+      }
+      case 'lt02': {
+        // Max % de complétion d'une équipe
+        const refByCountry = new Map<string, number>()
+        const ownedByCountry = new Map<string, number>()
+        for (const r of refRows) {
+          if (!r.country) continue
+          refByCountry.set(r.country, (refByCountry.get(r.country) ?? 0) + 1)
+          if (owned.has(r.sticker_id)) {
+            ownedByCountry.set(r.country, (ownedByCountry.get(r.country) ?? 0) + 1)
+          }
+        }
+        let max = 0
+        for (const [country, total] of refByCountry.entries()) {
+          if (total > 0) {
+            const pct = Math.round(((ownedByCountry.get(country) ?? 0) / total) * 100)
+            if (pct > max) max = pct
+          }
+        }
+        return Math.min(100, max)
+      }
+      case 'lt03': {
+        const targets = ['106', '107', '108', '109']
+        const have = targets.filter(id => owned.has(id)).length
+        return Math.round((have / 4) * 100)
+      }
+      case 'lt04': {
+        const fraIds = refRows.filter(r => r.country === 'FRA').map(r => r.sticker_id)
+        if (fraIds.length === 0) return 0
+        const have = fraIds.filter(id => owned.has(id)).length
+        return Math.min(100, Math.round((have / fraIds.length) * 100))
+      }
+      case 'lt05': {
+        const targets = ['JOR15', 'GHA5', 'CIV11', 'SUI17']
+        return Math.round((targets.filter(id => owned.has(id)).length / 4) * 100)
+      }
+      case 'lt06': {
+        const targets = ['KOR7', 'KOR8', 'KOR9', 'KOR10', 'KOR12', 'KOR16']
+        return Math.round((targets.filter(id => owned.has(id)).length / 6) * 100)
+      }
+      case 'lt07': {
+        const targets = ['ESP10', 'FRA15', 'ARG17', 'POR15', 'CRO9']
+        return Math.round((targets.filter(id => owned.has(id)).length / 5) * 100)
+      }
+      case 'lt08': {
+        const have = [...owned].filter(id => id.endsWith('2')).length
+        return Math.min(100, Math.round((have / 48) * 100))
+      }
+      default:
+        return 0
+    }
+  }
+
+  const result: TrophyProgressRow[] = memberIds.map(uid => ({
+    userId: uid,
+    username: profileMap.get(uid) ?? 'Joueur',
+    progress: computeProgress(collMap.get(uid) ?? new Set()),
+  }))
+
+  result.sort((a, b) => b.progress - a.progress)
+  return result
+}
+
 export async function fetchLeagueTrophies(
   leagueId: string,
 ): Promise<LeagueTrophyRow[]> {
@@ -196,7 +317,7 @@ export async function fetchLeagueTrophies(
     lt01: 'Trophée Platine',
     lt02: 'Trophée du Pionnier',
     lt03: 'Trophée Jules Rimet',
-    lt04: 'Trophée MasterPoulet',
+    lt04: 'Trophée La France',
     lt05: 'Trophée Galette Saucisse',
     lt06: 'Trophée du Repos Bien Mérité',
     lt07: 'Trophée des Grosses Boules Dorées',

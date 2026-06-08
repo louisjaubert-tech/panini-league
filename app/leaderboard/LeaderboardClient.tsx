@@ -7,9 +7,11 @@ import {
   fetchLeaderboard,
   fetchLeagueLeaderboard,
   fetchLeagueTrophies,
+  fetchTrophyProgress,
   type LeaderboardRow,
   type LeagueMemberRow,
   type LeagueTrophyRow,
+  type TrophyProgressRow,
 } from '@/app/actions/leaderboard'
 import type { UserLeague } from './page'
 
@@ -225,10 +227,43 @@ const ALL_TROPHIES = [
   { trophy_id: 'lt08', name: 'Trophée Lev Yachine',                description: 'Premier à avoir tous les gardiens titulaires de l\'album (les X2 de chaque sélection)' },
 ]
 
-function TrophiesSection({ trophies, loading }: { trophies: LeagueTrophyRow[]; loading: boolean }) {
+function TrophiesSection({
+  trophies,
+  loading,
+  leagueId,
+}: {
+  trophies: LeagueTrophyRow[]
+  loading: boolean
+  leagueId: string
+}) {
   const [open, setOpen] = useState(true)
+  // trophyId ouvert pour la progression, null = aucun
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  // cache : trophyId → résultats
+  const [progressCache, setProgressCache] = useState<Map<string, TrophyProgressRow[]>>(new Map())
+  const [loadingTrophy, setLoadingTrophy] = useState<string | null>(null)
 
   const earnedIds = useMemo(() => new Set(trophies.map((t) => t.trophy_id)), [trophies])
+
+  async function handleTrophyClick(trophy_id: string) {
+    if (earnedIds.has(trophy_id)) return  // déjà remporté → pas de progression
+
+    // Toggle
+    if (expandedId === trophy_id) {
+      setExpandedId(null)
+      return
+    }
+
+    setExpandedId(trophy_id)
+
+    // Déjà en cache
+    if (progressCache.has(trophy_id)) return
+
+    setLoadingTrophy(trophy_id)
+    const rows = await fetchTrophyProgress(leagueId, trophy_id)
+    setProgressCache((prev) => new Map(prev).set(trophy_id, rows))
+    setLoadingTrophy(null)
+  }
 
   return (
     <section>
@@ -260,6 +295,7 @@ function TrophiesSection({ trophies, loading }: { trophies: LeagueTrophyRow[]; l
           <ul className="space-y-2">
             {ALL_TROPHIES.map(({ trophy_id, name, description }) => {
               const earned = trophies.find((t) => t.trophy_id === trophy_id)
+
               if (earned) {
                 const date = new Date(earned.obtained_at).toLocaleDateString('fr-FR', {
                   day: 'numeric', month: 'short', year: 'numeric',
@@ -282,17 +318,80 @@ function TrophiesSection({ trophies, loading }: { trophies: LeagueTrophyRow[]; l
                   </li>
                 )
               }
+
+              // ── Trophée non remporté — cliquable ──
+              const isExpanded = expandedId === trophy_id
+              const isLoadingThis = loadingTrophy === trophy_id
+              const progressRows = progressCache.get(trophy_id)
+
               return (
-                <li
-                  key={trophy_id}
-                  className="flex items-start gap-3 rounded-xl border border-white/5 bg-white/3 px-4 py-3 opacity-45"
-                >
-                  <span className="text-lg shrink-0 mt-0.5">🔒</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-400">{name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-                    <p className="text-xs text-gray-600 mt-1">Pas encore remporté</p>
-                  </div>
+                <li key={trophy_id}>
+                  <button
+                    onClick={() => handleTrophyClick(trophy_id)}
+                    className={`w-full flex items-start gap-3 rounded-xl border px-4 py-3 text-left transition-colors cursor-pointer ${
+                      isExpanded
+                        ? 'border-white/15 bg-white/8 opacity-70'
+                        : 'border-white/5 bg-white/[0.03] opacity-45 hover:opacity-60 hover:border-white/10 hover:bg-white/5'
+                    }`}
+                  >
+                    <span className="text-lg shrink-0 mt-0.5">🔒</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-gray-400">{name}</p>
+                        <svg
+                          className={`h-3.5 w-3.5 shrink-0 text-gray-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+                      <p className="text-xs text-gray-600 mt-1">Pas encore remporté</p>
+                    </div>
+                  </button>
+
+                  {/* Liste de progression déroulante */}
+                  {isExpanded && (
+                    <div className="mt-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 space-y-2">
+                      {isLoadingThis ? (
+                        <p className="text-xs text-gray-500 text-center py-2">Chargement…</p>
+                      ) : progressRows && progressRows.length > 0 ? (
+                        <>
+                          <p className="text-xs font-medium text-gray-500 mb-2">Progression des membres</p>
+                          {progressRows.map((row, idx) => {
+                            const isLeader = idx === 0 && row.progress > 0
+                            return (
+                              <div key={row.userId} className="flex items-center gap-3">
+                                <span
+                                  className="w-20 shrink-0 truncate text-xs font-medium"
+                                  style={{ color: isLeader ? '#ffd60a' : '#9ca3af' }}
+                                >
+                                  {isLeader && '⭐ '}{row.username}
+                                </span>
+                                <div className="flex-1 h-1.5 overflow-hidden rounded-full bg-white/10">
+                                  <div
+                                    className="h-full rounded-full transition-all duration-500"
+                                    style={{
+                                      width: `${row.progress}%`,
+                                      backgroundColor: isLeader ? '#ffd60a' : '#f97316',
+                                    }}
+                                  />
+                                </div>
+                                <span
+                                  className="w-9 shrink-0 text-right text-xs tabular-nums"
+                                  style={{ color: isLeader ? '#ffd60a' : '#6b7280' }}
+                                >
+                                  {row.progress}%
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </>
+                      ) : (
+                        <p className="text-xs text-gray-600 text-center py-1">Aucune donnée</p>
+                      )}
+                    </div>
+                  )}
                 </li>
               )
             })}
@@ -420,7 +519,7 @@ function LeagueTab({
 
       {/* Trophées de la ligue */}
       <div className="border-t border-white/10 pt-6">
-        <TrophiesSection trophies={trophies} loading={trophiesLoading} />
+        <TrophiesSection trophies={trophies} loading={trophiesLoading} leagueId={selectedId} />
       </div>
     </div>
   )
