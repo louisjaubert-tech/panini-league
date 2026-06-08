@@ -9,6 +9,7 @@ import { logout } from '@/app/actions/auth'
 const CENTER_LINKS = [
   { href: '/dashboard',   label: 'Mes stats'     },
   { href: '/collection',  label: 'Ma collection' },
+  { href: '/badges',      label: 'Badges'        },
   { href: '/leagues',     label: 'Ligues'        },
   { href: '/leaderboard', label: 'Classement'    },
 ]
@@ -17,6 +18,7 @@ const MOBILE_LINKS = [
   { href: '/scan',        label: '📷 ScanPhoto'  },
   { href: '/dashboard',   label: 'Mes stats'     },
   { href: '/collection',  label: 'Ma collection' },
+  { href: '/badges',      label: 'Badges'        },
   { href: '/leagues',     label: 'Ligues'        },
   { href: '/leaderboard', label: 'Classement'    },
 ]
