@@ -21,7 +21,7 @@ const BADGE_META: Record<string, { stars: number; description?: string }> = {
   b02: { stars: 3, description: 'Avoir Messi (ARG17) ET Cristiano Ronaldo (POR15) dans sa collection' },
   b04: { stars: 2 },
   b05: { stars: 1, description: '50 doublons — à toi les dons et échanges avec les gens de ta ligue !' },
-  b06: { stars: 2, description: 'Au moins 1 joueur de chacun des 32 pays participants à la Coupe du Monde 2026' },
+  b06: { stars: 2, description: 'Au moins 1 joueur de chacun des 48 pays participants à la Coupe du Monde 2026' },
   b08: { stars: 3 },
   b09: { stars: 3 },
   b10: { stars: 2 },
