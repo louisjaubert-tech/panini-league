@@ -32,12 +32,12 @@ function StatCard({
 
 function OcrBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
-    pending:    { label: 'En attente', cls: 'bg-yellow-100 text-yellow-700' },
-    processing: { label: 'Analyse…',   cls: 'bg-blue-100 text-blue-700' },
-    done:       { label: 'Analysé',    cls: 'bg-green-100 text-green-700' },
-    error:      { label: 'Erreur',     cls: 'bg-red-100 text-red-700' },
+    pending:    { label: 'En attente', cls: 'bg-yellow-500/20 text-yellow-300' },
+    processing: { label: 'Analyse…',   cls: 'bg-blue-500/20 text-blue-300' },
+    done:       { label: 'Analysé',    cls: 'bg-green-500/20 text-green-300' },
+    error:      { label: 'Erreur',     cls: 'bg-red-500/20 text-red-400' },
   }
-  const { label, cls } = map[status] ?? { label: status, cls: 'bg-gray-100 text-gray-600' }
+  const { label, cls } = map[status] ?? { label: status, cls: 'bg-white/10 text-gray-400' }
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
       {label}
@@ -141,9 +141,9 @@ export default function DashboardClient({
       <div className="grid gap-8 lg:grid-cols-2">
         {/* ── Derniers badges ── */}
         <section>
-          <h2 className="mb-4 text-lg font-semibold text-gray-700">Derniers badges</h2>
+          <h2 className="mb-4 text-lg font-semibold text-white">Derniers badges</h2>
           {recentBadges.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-400">
+            <div className="rounded-2xl border border-dashed border-white/15 p-8 text-center text-sm text-gray-500">
               Aucun badge débloqué pour l&apos;instant
             </div>
           ) : (
@@ -151,16 +151,16 @@ export default function DashboardClient({
               {recentBadges.map((badge: Badge) => (
                 <li
                   key={badge.badge_id}
-                  className="flex items-center gap-4 rounded-2xl bg-white border border-gray-100 px-5 py-4 shadow-sm"
+                  className="flex items-center gap-4 rounded-2xl bg-white/10 border border-white/10 px-5 py-4"
                 >
                   <span className="text-3xl leading-none" role="img" aria-label={badge.name}>
                     🏅
                   </span>
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{badge.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{badge.description}</p>
+                    <p className="font-semibold text-white truncate">{badge.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{badge.description}</p>
                   </div>
-                  <time className="ml-auto shrink-0 text-xs text-gray-400 tabular-nums">
+                  <time className="ml-auto shrink-0 text-xs text-gray-500 tabular-nums">
                     {new Date(badge.obtained_at).toLocaleDateString('fr-FR', {
                       day: '2-digit',
                       month: 'short',
@@ -174,9 +174,9 @@ export default function DashboardClient({
 
         {/* ── Derniers blisters ── */}
         <section>
-          <h2 className="mb-4 text-lg font-semibold text-gray-700">Derniers blisters</h2>
+          <h2 className="mb-4 text-lg font-semibold text-white">Derniers blisters</h2>
           {recentPacks.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-400">
+            <div className="rounded-2xl border border-dashed border-white/15 p-8 text-center text-sm text-gray-500">
               Aucun blister scanné pour l&apos;instant
             </div>
           ) : (
@@ -184,9 +184,9 @@ export default function DashboardClient({
               {recentPacks.map((pack: PackOpening) => (
                 <li
                   key={pack.id}
-                  className="flex items-center gap-4 rounded-2xl bg-white border border-gray-100 px-5 py-4 shadow-sm"
+                  className="flex items-center gap-4 rounded-2xl bg-white/10 border border-white/10 px-5 py-4"
                 >
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-gray-100">
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-white/10">
                     {pack.photo_url ? (
                       <Image
                         src={pack.photo_url}
@@ -197,14 +197,14 @@ export default function DashboardClient({
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center">
-                        <svg className="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12h.008v.008H13.5V12zm-6 3.75h12a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                         </svg>
                       </div>
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-800">
+                    <p className="text-sm font-medium text-white">
                       Blister du{' '}
                       {new Date(pack.opened_at).toLocaleDateString('fr-FR', {
                         day: '2-digit',
@@ -213,7 +213,7 @@ export default function DashboardClient({
                     </p>
                     <OcrBadge status={pack.ocr_status} />
                   </div>
-                  <time className="ml-auto shrink-0 text-xs text-gray-400 tabular-nums">
+                  <time className="ml-auto shrink-0 text-xs text-gray-500 tabular-nums">
                     {new Date(pack.opened_at).toLocaleTimeString('fr-FR', {
                       hour: '2-digit',
                       minute: '2-digit',

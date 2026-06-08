@@ -109,6 +109,7 @@ export type LeagueMemberRow = {
   username: string
   pct: number
   badgeCount: number
+  trophyCount: number
   isCurrentUser: boolean
 }
 
@@ -124,10 +125,15 @@ export async function fetchLeagueLeaderboard(
   const memberIds = (memberRows ?? []).map((m) => m.user_id as string)
   if (memberIds.length === 0) return []
 
-  const [profilesResult, collectionsResult, badgesResult] = await Promise.all([
+  const [profilesResult, collectionsResult, badgesResult, trophiesResult] = await Promise.all([
     supabaseAdmin.from('profiles').select('id, username').in('id', memberIds),
     supabaseAdmin.from('user_collection').select('user_id').in('user_id', memberIds),
     supabaseAdmin.from('user_badges').select('user_id').in('user_id', memberIds),
+    supabaseAdmin
+      .from('league_trophies')
+      .select('user_id')
+      .eq('league_id', leagueId)
+      .in('user_id', memberIds),
   ])
 
   const collectionCount: Record<string, number> = {}
@@ -142,6 +148,12 @@ export async function fetchLeagueLeaderboard(
     badgeCount[uid] = (badgeCount[uid] ?? 0) + 1
   }
 
+  const trophyCount: Record<string, number> = {}
+  for (const r of trophiesResult.data ?? []) {
+    const uid = r.user_id as string
+    trophyCount[uid] = (trophyCount[uid] ?? 0) + 1
+  }
+
   const profileMap = new Map(
     (profilesResult.data ?? []).map((p) => [p.id as string, p.username as string])
   )
@@ -151,6 +163,7 @@ export async function fetchLeagueLeaderboard(
     username: profileMap.get(uid) ?? 'Joueur',
     pct: Math.round(((collectionCount[uid] ?? 0) / TOTAL_STICKERS) * 100),
     badgeCount: badgeCount[uid] ?? 0,
+    trophyCount: trophyCount[uid] ?? 0,
     isCurrentUser: uid === currentUserId,
   }))
 

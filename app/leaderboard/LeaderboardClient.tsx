@@ -44,13 +44,13 @@ function RankBadge({ rank }: { rank: number }) {
 function ProgressBar({ pct }: { pct: number }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-gray-100">
+      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-white/10">
         <div
-          className="h-full rounded-full bg-indigo-500 transition-all duration-500"
-          style={{ width: `${pct}%` }}
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, backgroundColor: '#dc2626' }}
         />
       </div>
-      <span className="tabular-nums text-sm font-medium text-gray-700">{pct}&nbsp;%</span>
+      <span className="tabular-nums text-sm font-medium text-gray-400">{pct}&nbsp;%</span>
     </div>
   )
 }
@@ -122,10 +122,10 @@ function GeneralTab({ initial }: { initial: LeaderboardRow[] }) {
       </div>
 
       {/* Tableau desktop */}
-      <div className="hidden overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm md:block">
-        <table className="min-w-full divide-y divide-gray-100">
+      <div className="hidden overflow-hidden rounded-2xl border border-white/10 bg-white/5 md:block">
+        <table className="min-w-full divide-y divide-white/5">
           <thead>
-            <tr className="bg-gray-50">
+            <tr className="bg-white/5">
               <th className="py-3.5 pl-6 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Rang</th>
               <th className="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Joueur</th>
               <th className="px-3 py-3.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Cartes uniques</th>
@@ -134,10 +134,10 @@ function GeneralTab({ initial }: { initial: LeaderboardRow[] }) {
               <th className="py-3.5 pl-3 pr-6 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Pays</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-white/5">
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-sm text-gray-400">
+                <td colSpan={6} className="py-16 text-center text-sm text-gray-500">
                   Aucun joueur pour l&apos;instant
                 </td>
               </tr>
@@ -145,21 +145,21 @@ function GeneralTab({ initial }: { initial: LeaderboardRow[] }) {
               rows.map((row) => (
                 <tr
                   key={row.userId}
-                  className={`transition-colors hover:bg-gray-50/60 ${row.rank <= 3 ? 'bg-indigo-50/30' : ''}`}
+                  className={`transition-colors hover:bg-white/5 ${row.rank <= 3 ? 'bg-yellow-500/5' : ''}`}
                 >
                   <td className="py-4 pl-6 pr-3"><RankBadge rank={row.rank} /></td>
-                  <td className="px-3 py-4"><span className="font-semibold text-gray-900">{row.username}</span></td>
+                  <td className="px-3 py-4"><span className="font-semibold text-white">{row.username}</span></td>
                   <td className="px-3 py-4 text-right">
-                    <span className="tabular-nums text-lg font-bold text-indigo-600">{row.uniqueCards}</span>
+                    <span className="tabular-nums text-lg font-bold" style={{ color: '#ffd60a' }}>{row.uniqueCards}</span>
                   </td>
                   <td className="px-3 py-4"><ProgressBar pct={row.completionPct} /></td>
                   <td className="px-3 py-4 text-right">
-                    <span className="inline-flex items-center gap-1 tabular-nums text-sm font-medium text-gray-700">
+                    <span className="inline-flex items-center gap-1 tabular-nums text-sm font-medium text-gray-400">
                       <span>{row.badgeCount}</span><span className="text-base leading-none">🏅</span>
                     </span>
                   </td>
                   <td className="py-4 pl-3 pr-6 text-right">
-                    <span className="inline-flex items-center gap-1 tabular-nums text-sm font-medium text-gray-700">
+                    <span className="inline-flex items-center gap-1 tabular-nums text-sm font-medium text-gray-400">
                       <span>{row.countries}</span><span className="text-base leading-none">🌍</span>
                     </span>
                   </td>
@@ -173,35 +173,35 @@ function GeneralTab({ initial }: { initial: LeaderboardRow[] }) {
       {/* Cards mobile */}
       <div className="space-y-3 md:hidden">
         {rows.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-400">
+          <div className="rounded-2xl border border-dashed border-white/15 p-10 text-center text-sm text-gray-500">
             Aucun joueur pour l&apos;instant
           </div>
         ) : (
           rows.map((row) => (
             <div
               key={row.userId}
-              className={`rounded-2xl border bg-white px-5 py-4 shadow-sm ${row.rank <= 3 ? 'border-indigo-200' : 'border-gray-100'}`}
+              className={`rounded-2xl border px-5 py-4 ${row.rank <= 3 ? 'border-yellow-500/20 bg-yellow-500/5' : 'border-white/10 bg-white/5'}`}
             >
               <div className="flex items-center gap-3">
                 <RankBadge rank={row.rank} />
-                <span className="flex-1 font-semibold text-gray-900">{row.username}</span>
-                <span className="tabular-nums text-xl font-bold text-indigo-600">
+                <span className="flex-1 font-semibold text-white">{row.username}</span>
+                <span className="tabular-nums text-xl font-bold" style={{ color: '#ffd60a' }}>
                   {row.uniqueCards}
-                  <span className="ml-0.5 text-xs font-normal text-gray-400"> cartes</span>
+                  <span className="ml-0.5 text-xs font-normal text-gray-500"> cartes</span>
                 </span>
               </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 border-t border-gray-50 pt-3">
+              <div className="mt-3 grid grid-cols-3 gap-2 border-t border-white/5 pt-3">
                 <div className="text-center">
-                  <p className="text-xs text-gray-400">Album</p>
-                  <p className="tabular-nums text-sm font-semibold text-gray-700">{row.completionPct}&nbsp;%</p>
+                  <p className="text-xs text-gray-500">Album</p>
+                  <p className="tabular-nums text-sm font-semibold text-white">{row.completionPct}&nbsp;%</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-gray-400">Badges</p>
-                  <p className="text-sm font-semibold text-gray-700">{row.badgeCount} 🏅</p>
+                  <p className="text-xs text-gray-500">Badges</p>
+                  <p className="text-sm font-semibold text-white">{row.badgeCount} 🏅</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-gray-400">Pays</p>
-                  <p className="text-sm font-semibold text-gray-700">{row.countries} 🌍</p>
+                  <p className="text-xs text-gray-500">Pays</p>
+                  <p className="text-sm font-semibold text-white">{row.countries} 🌍</p>
                 </div>
               </div>
             </div>
@@ -409,9 +409,11 @@ function LeagueTab({
                   <span className="text-xs tabular-nums text-gray-500">{member.pct}%</span>
                 </div>
               </div>
-              <div className="shrink-0 flex items-center gap-1 text-sm text-gray-500">
-                <span>{member.badgeCount}</span>
-                <span>🏅</span>
+              <div className="shrink-0 flex items-center gap-2 text-sm text-gray-500">
+                <span className="flex items-center gap-0.5">{member.badgeCount}<span className="ml-0.5">🏅</span></span>
+                {member.trophyCount > 0 && (
+                  <span className="flex items-center gap-0.5">{member.trophyCount}<span className="ml-0.5">🏆</span></span>
+                )}
               </div>
             </li>
           ))}
@@ -450,7 +452,7 @@ export default function LeaderboardClient({
         {(
           [
             { key: 'general', label: '🌍 Général' },
-            { key: 'league', label: '👥 Ma ligue' },
+            { key: 'league', label: '👥 Mes ligues' },
           ] as const
         ).map(({ key, label }) => (
           <button
