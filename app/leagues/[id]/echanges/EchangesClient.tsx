@@ -7,6 +7,7 @@ import {
   type ExchangeData,
   type Donation,
   type DonationOut,
+  type TradeSuccess,
 } from '@/app/actions/trades'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -73,10 +74,22 @@ function StickerCheckList({
   )
 }
 
-function SuccessBanner({ message }: { message: string }) {
+function SuccessBanner({ result, baseMessage }: { result: TradeSuccess; baseMessage: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-green-600/30 bg-green-900/20 px-4 py-3 text-sm font-medium text-green-400">
-      {message}
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2 rounded-xl border border-green-600/30 bg-green-900/20 px-4 py-3 text-sm font-medium text-green-400">
+        {baseMessage}
+      </div>
+      {result.new_badges.map((b) => (
+        <div key={b.badge_id} className="flex items-center gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-2.5 text-sm font-medium text-yellow-300">
+          🏅 Nouveau badge débloqué : <span className="font-bold">{b.name}</span>
+        </div>
+      ))}
+      {result.new_trophies.map((t) => (
+        <div key={t.trophy_id} className="flex items-center gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-2.5 text-sm font-medium text-yellow-300">
+          🏆 Nouveau trophée : <span className="font-bold">{t.name}</span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -105,7 +118,7 @@ function ReceiveTab({
 
   const [selectedGiverId, setSelectedGiverId] = useState<string | null>(null)
   const [checked, setChecked] = useState<Set<string>>(new Set())
-  const [success, setSuccess] = useState(false)
+  const [tradeResult, setTradeResult] = useState<TradeSuccess | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -115,13 +128,13 @@ function ReceiveTab({
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
-    setSuccess(false)
+    setTradeResult(null)
   }
 
   function selectGiver(id: string) {
     setSelectedGiverId((prev) => (prev === id ? null : id))
     setChecked(new Set())
-    setSuccess(false)
+    setTradeResult(null)
     setError(null)
   }
 
@@ -136,7 +149,7 @@ function ReceiveTab({
       if ('error' in result) {
         setError(result.error)
       } else {
-        setSuccess(true)
+        setTradeResult(result)
         setChecked(new Set())
       }
     })
@@ -186,7 +199,7 @@ function ReceiveTab({
                   </p>
                   <StickerCheckList stickers={stickers} checked={checked} onToggle={toggleCheck} />
                   {error && <p className="text-xs text-red-400">{error}</p>}
-                  {success && <SuccessBanner message="✅ Collection mise à jour !" />}
+                  {tradeResult && <SuccessBanner result={tradeResult} baseMessage="✅ Collection mise à jour !" />}
                   <button
                     onClick={handleConfirm}
                     disabled={checked.size === 0 || isPending}
@@ -232,7 +245,7 @@ function GiveTab({
 
   const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
   const [checked, setChecked] = useState<Set<string>>(new Set())
-  const [success, setSuccess] = useState(false)
+  const [tradeResult, setTradeResult] = useState<TradeSuccess | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -242,13 +255,13 @@ function GiveTab({
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
-    setSuccess(false)
+    setTradeResult(null)
   }
 
   function selectReceiver(id: string) {
     setSelectedReceiverId((prev) => (prev === id ? null : id))
     setChecked(new Set())
-    setSuccess(false)
+    setTradeResult(null)
     setError(null)
   }
 
@@ -263,7 +276,7 @@ function GiveTab({
       if ('error' in result) {
         setError(result.error)
       } else {
-        setSuccess(true)
+        setTradeResult(result)
         setChecked(new Set())
       }
     })
@@ -315,7 +328,7 @@ function GiveTab({
                   </p>
                   <StickerCheckList stickers={stickers} checked={checked} onToggle={toggleCheck} />
                   {error && <p className="text-xs text-red-400">{error}</p>}
-                  {success && <SuccessBanner message="✅ Don confirmé !" />}
+                  {tradeResult && <SuccessBanner result={tradeResult} baseMessage="✅ Don confirmé !" />}
                   <button
                     onClick={handleConfirm}
                     disabled={checked.size === 0 || isPending}
@@ -350,7 +363,6 @@ export default function EchangesClient({
 
   return (
     <div className="space-y-5">
-      {/* Onglets */}
       <div className="flex gap-1 rounded-xl bg-white/5 p-1 w-fit">
         <TabButton active={tab === 'receive'} onClick={() => setTab('receive')}>
           📥 Ce que je peux recevoir

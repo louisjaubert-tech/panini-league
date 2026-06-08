@@ -75,79 +75,47 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* ── Features ── */}
-      <div className="mx-auto mt-8 grid max-w-4xl grid-cols-2 gap-4 sm:grid-cols-4">
-        {[
-          {
-            emoji: '📊',
-            title: 'Mes stats',
-            desc: 'Visualise ta progression, tes doublons et ton taux de complétion.',
-            href: '/dashboard',
-          },
-          {
-            emoji: '🃏',
-            title: 'Ma collection',
-            desc: 'Parcours ta collection pays par pays et découvre ce qu\'il te manque.',
-            href: '/collection',
-          },
-          {
-            emoji: '📸',
-            title: 'Scanner',
-            desc: 'Prends une photo de ton blister et laisse l\'IA reconnaître chaque sticker automatiquement.',
-            href: '/scan',
-          },
-          {
-            emoji: '🏆',
-            title: 'Classement',
-            desc: 'Compare ta collection avec tes amis et grimpe dans le classement général.',
-            href: '/leaderboard',
-          },
-        ].map(({ emoji, title, desc, href }) => (
-          <Link
-            key={title}
-            href={href}
-            className="block rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center transition-all duration-200 hover:scale-[1.03] hover:border-red-600/50 hover:bg-white/10"
-          >
-            <div className="mb-3 text-4xl">{emoji}</div>
-            <h3 className="mb-2 text-base font-bold" style={{ color: '#ffd60a' }}>
-              {title}
-            </h3>
-            <p className="text-sm leading-relaxed" style={{ color: '#64748b' }}>{desc}</p>
-          </Link>
-        ))}
-      </div>
-
       {/* ── Comment ça marche ── */}
-      <div className="mx-auto mt-10 max-w-4xl w-full">
-        <h2 className="mb-5 text-lg font-bold" style={{ color: '#ffd60a' }}>
+      <div className="mx-auto mt-8 max-w-4xl w-full">
+        <h2 className="mb-4 text-lg font-bold" style={{ color: '#ffd60a' }}>
           💡 Comment ça marche ?
         </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-4">
           {[
             {
               emoji: '📸',
               title: 'Scanne tes stickers',
-              desc: "Pose-les sur une table ou prends en photo les stickers déjà collés dans ton album Panini. L'app reconnaît automatiquement chaque joueur et met à jour ta collection.",
+              desc: "Prends en photo tes stickers. L'IA les reconnaît automatiquement.",
+              href: '/scan',
             },
             {
               emoji: '📊',
               title: 'Suis tes stats',
-              desc: 'Stickers uniques, doublons, badges débloqués… tout est calculé en temps réel.',
+              desc: 'Doublons, badges, taux de complétion… tout en temps réel.',
+              href: '/dashboard',
             },
             {
               emoji: '🔄',
               title: 'Échange avec ta ligue',
-              desc: "L'app te montre qui dans ta ligue peut te donner ses doublons, et à qui tu peux donner les tiens. Une fois l'échange fait en physique, confirme-le dans l'app et les collections se mettent à jour automatiquement.",
+              desc: "L'app te montre qui peut te donner ses doublons, et à qui donner les tiens.",
+              href: '/echanges',
             },
-          ].map(({ emoji, title, desc }) => (
-            <div
+            {
+              emoji: '🏆',
+              title: 'Découvre ton classement',
+              desc: 'Compare ta collection avec tes amis et grimpe dans le classement.',
+              href: '/leaderboard',
+            },
+          ].map(({ emoji, title, desc, href }) => (
+            <Link
               key={title}
-              className="rounded-2xl border border-white/10 bg-white/5 px-5 py-5"
+              href={href}
+              className="block rounded-2xl border border-white/10 bg-white/5 px-4 py-4 transition-all duration-200 hover:scale-[1.02] hover:border-red-600/40 hover:bg-white/10"
             >
               <div className="mb-2 text-2xl">{emoji}</div>
               <h3 className="mb-1 text-sm font-bold text-white">{title}</h3>
               <p className="text-xs leading-relaxed" style={{ color: '#64748b' }}>{desc}</p>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

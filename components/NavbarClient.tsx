@@ -11,6 +11,7 @@ const CENTER_LINKS = [
   { href: '/collection',  label: 'Ma collection' },
   { href: '/badges',      label: 'Badges'        },
   { href: '/leagues',     label: 'Ligues'        },
+  { href: '/echanges',    label: '🔄 Échanges'   },
   { href: '/leaderboard', label: 'Classement'    },
 ]
 
@@ -20,6 +21,7 @@ const MOBILE_LINKS = [
   { href: '/collection',  label: 'Ma collection' },
   { href: '/badges',      label: 'Badges'        },
   { href: '/leagues',     label: 'Ligues'        },
+  { href: '/echanges',    label: '🔄 Échanges'   },
   { href: '/leaderboard', label: 'Classement'    },
 ]
 
