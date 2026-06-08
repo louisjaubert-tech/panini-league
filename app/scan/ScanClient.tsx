@@ -2,7 +2,45 @@
 
 import { useRef, useState } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { uploadPack } from '@/app/actions/scan'
+
+// ── Dictionnaire étoiles (copie de BadgesClient.tsx) ─────────────────────────
+
+const BADGE_META: Record<string, { stars: number }> = {
+  b01: { stars: 1 },
+  b02: { stars: 3 },
+  b03: { stars: 2 },
+  b04: { stars: 2 },
+  b05: { stars: 1 },
+  b06: { stars: 3 },
+  b08: { stars: 3 },
+  b09: { stars: 3 },
+  b10: { stars: 2 },
+}
+
+function getBadgeStars(badge_id: string): number {
+  return BADGE_META[badge_id]?.stars ?? 2
+}
+
+function InlineStars({ badge_id }: { badge_id: string }) {
+  const n = getBadgeStars(badge_id)
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3].map((i) => (
+        <svg key={i} className="h-3 w-3" viewBox="0 0 20 20"
+          fill={i <= n ? '#ffd60a' : 'none'}
+          stroke={i <= n ? '#ffd60a' : '#4b5563'}
+          strokeWidth={1.5}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round"
+            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+          />
+        </svg>
+      ))}
+    </span>
+  )
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -14,7 +52,7 @@ type StickerResult = {
   is_duplicate: boolean
 }
 
-type Badge  = { badge_id: string; name: string; points: number }
+type Badge  = { badge_id: string; name: string; points?: number }
 type Trophy = { trophy_id: string; name: string }
 
 type ScanResult = { stickers: StickerResult[]; new_badges: Badge[]; new_trophies?: Trophy[] }
@@ -104,7 +142,7 @@ function ResultsModal({ results, onClose }: { results: AccumulatedResults; onClo
                 {results.new_badges.map((b) => (
                   <li key={b.badge_id} className="flex items-center justify-between rounded-xl bg-yellow-400/10 px-4 py-3">
                     <span className="text-sm font-medium text-white">{b.name}</span>
-                    <span className="text-sm font-semibold text-orange-400">+{b.points} pts</span>
+                    <InlineStars badge_id={b.badge_id} />
                   </li>
                 ))}
               </ul>
@@ -141,6 +179,7 @@ function ResultsModal({ results, onClose }: { results: AccumulatedResults; onClo
 // ── Composant principal ───────────────────────────────────────────────────────
 
 export default function ScanClient() {
+  const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Sélection
@@ -278,6 +317,9 @@ export default function ScanClient() {
 
     setResults(accumulated)
     setProcessing(false)
+
+    // Recharge le Server Component pour mettre à jour "Derniers blisters scannés"
+    router.refresh()
   }
 
   const total = files.length
