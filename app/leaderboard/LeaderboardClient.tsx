@@ -215,14 +215,14 @@ function GeneralTab({ initial }: { initial: LeaderboardRow[] }) {
 // ── Section trophées de la ligue ─────────────────────────────────────────────
 
 const ALL_TROPHIES = [
-  { trophy_id: 'lt01', name: 'Trophée Platine' },
-  { trophy_id: 'lt02', name: 'Trophée du Pionnier' },
-  { trophy_id: 'lt03', name: 'Trophée Jules Rimet' },
-  { trophy_id: 'lt04', name: 'Trophée MasterPoulet' },
-  { trophy_id: 'lt05', name: 'Trophée Galette Saucisse' },
-  { trophy_id: 'lt06', name: 'Trophée du Repos Bien Mérité' },
-  { trophy_id: 'lt07', name: 'Trophée des Grosses Boules Dorées' },
-  { trophy_id: 'lt08', name: 'Trophée Lev Yachine' },
+  { trophy_id: 'lt01', name: 'Trophée Platine',                    description: "Premier à compléter l'album entier (1050 stickers)" },
+  { trophy_id: 'lt02', name: 'Trophée du Pionnier',                description: 'Premier à compléter une équipe nationale entière' },
+  { trophy_id: 'lt03', name: 'Trophée Jules Rimet',                description: "Premier à avoir les 4 stickers de l'Histoire de la Coupe du Monde (106, 107, 108, 109)" },
+  { trophy_id: 'lt04', name: 'Trophée MasterPoulet',               description: "Premier à compléter la double page de l'équipe de France" },
+  { trophy_id: 'lt05', name: 'Trophée Galette Saucisse',           description: 'Premier à avoir les 4 joueurs du Stade Rennais : JOR15, GHA5, CIV11, SUI17' },
+  { trophy_id: 'lt06', name: 'Trophée du Repos Bien Mérité',       description: 'Premier à avoir les 6 Lee de Corée du Sud : KOR7, KOR8, KOR9, KOR10, KOR12, KOR16' },
+  { trophy_id: 'lt07', name: 'Trophée des Grosses Boules Dorées',  description: 'Premier à avoir tous les Ballons d\'Or : ESP10, FRA15, ARG17, POR15, CRO9' },
+  { trophy_id: 'lt08', name: 'Trophée Lev Yachine',                description: 'Premier à avoir tous les gardiens titulaires de l\'album (les X2 de chaque sélection)' },
 ]
 
 function TrophiesSection({ trophies, loading }: { trophies: LeagueTrophyRow[]; loading: boolean }) {
@@ -258,7 +258,7 @@ function TrophiesSection({ trophies, loading }: { trophies: LeagueTrophyRow[]; l
           <div className="py-6 text-center text-xs text-gray-500">Chargement…</div>
         ) : (
           <ul className="space-y-2">
-            {ALL_TROPHIES.map(({ trophy_id, name }) => {
+            {ALL_TROPHIES.map(({ trophy_id, name, description }) => {
               const earned = trophies.find((t) => t.trophy_id === trophy_id)
               if (earned) {
                 const date = new Date(earned.obtained_at).toLocaleDateString('fr-FR', {
@@ -267,12 +267,13 @@ function TrophiesSection({ trophies, loading }: { trophies: LeagueTrophyRow[]; l
                 return (
                   <li
                     key={trophy_id}
-                    className="flex items-center gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-3"
+                    className="flex items-start gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-3"
                   >
-                    <span className="text-lg shrink-0">🏆</span>
+                    <span className="text-lg shrink-0 mt-0.5">🏆</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{name}</p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-sm font-semibold text-white">{name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+                      <p className="text-xs text-gray-400 mt-1">
                         Remporté par{' '}
                         <span style={{ color: '#ffd60a' }}>{earned.username}</span>
                         {' · '}{date}
@@ -284,12 +285,13 @@ function TrophiesSection({ trophies, loading }: { trophies: LeagueTrophyRow[]; l
               return (
                 <li
                   key={trophy_id}
-                  className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/3 px-4 py-3 opacity-45"
+                  className="flex items-start gap-3 rounded-xl border border-white/5 bg-white/3 px-4 py-3 opacity-45"
                 >
-                  <span className="text-lg shrink-0">🔒</span>
+                  <span className="text-lg shrink-0 mt-0.5">🔒</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-400 truncate">{name}</p>
-                    <p className="text-xs text-gray-600">Pas encore remporté</p>
+                    <p className="text-sm font-medium text-gray-400">{name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+                    <p className="text-xs text-gray-600 mt-1">Pas encore remporté</p>
                   </div>
                 </li>
               )
