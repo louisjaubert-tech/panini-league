@@ -96,13 +96,13 @@ export default function LeaguesClient() {
             placeholder="Nom de la ligue"
             required
             minLength={2}
-            className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+            className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           />
           <button
             type="submit"
             disabled={createPending}
             className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60 transition-opacity hover:opacity-90"
-            style={{ backgroundColor: '#dc2626' }}
+            style={{ backgroundColor: '#f97316' }}
           >
             {createPending ? <><Spinner /> Création…</> : 'Créer'}
           </button>

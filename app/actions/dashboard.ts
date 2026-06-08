@@ -27,6 +27,7 @@ export type DashboardData = {
   countries: number
   recentBadges: Badge[]
   recentPacks: PackOpening[]
+  totalPacks: number
 }
 
 export async function fetchDashboardData(): Promise<DashboardData | null> {
@@ -42,7 +43,7 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
 
   const uid = user.id
 
-  const [stats, badgesResult, packsResult] = await Promise.all([
+  const [stats, badgesResult, packsResult, packsCountResult] = await Promise.all([
     getUserStats(uid),
 
     // 3 derniers badges
@@ -67,6 +68,12 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
       .eq('user_id', uid)
       .order('opened_at', { ascending: false })
       .limit(5),
+
+    // Total blisters scannés
+    supabaseAdmin
+      .from('pack_openings')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', uid),
   ])
 
   const uniqueCards   = stats.unique
@@ -108,5 +115,6 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
     countries: stats.countries,
     recentBadges,
     recentPacks,
+    totalPacks: packsCountResult.count ?? 0,
   }
 }

@@ -6,23 +6,24 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { logout } from '@/app/actions/auth'
 
-const CENTER_LINKS = [
-  { href: '/dashboard',   label: 'Mes stats'     },
-  { href: '/collection',  label: 'Ma collection' },
-  { href: '/badges',      label: 'Badges'        },
-  { href: '/leagues',     label: 'Ligues'        },
+const NAV_GROUP1 = [
+  { href: '/dashboard',  label: '📊 Mes stats'     },
+  { href: '/collection', label: '🃏 Ma collection' },
+]
+
+const NAV_GROUP2 = [
   { href: '/echanges',    label: '🔄 Échanges'   },
-  { href: '/leaderboard', label: 'Classement'    },
+  { href: '/leagues',     label: '👥 Ligues'      },
+  { href: '/leaderboard', label: '🏆 Classement'  },
 ]
 
 const MOBILE_LINKS = [
-  { href: '/scan',        label: '📷 ScanPhoto'  },
-  { href: '/dashboard',   label: 'Mes stats'     },
-  { href: '/collection',  label: 'Ma collection' },
-  { href: '/badges',      label: 'Badges'        },
-  { href: '/leagues',     label: 'Ligues'        },
-  { href: '/echanges',    label: '🔄 Échanges'   },
-  { href: '/leaderboard', label: 'Classement'    },
+  { href: '/scan',        label: '📷 ScanPhoto'    },
+  { href: '/dashboard',   label: '📊 Mes stats'    },
+  { href: '/collection',  label: '🃏 Ma collection' },
+  { href: '/echanges',    label: '🔄 Échanges'     },
+  { href: '/leagues',     label: '👥 Ligues'        },
+  { href: '/leaderboard', label: '🏆 Classement'   },
 ]
 
 export default function NavbarClient({
@@ -83,7 +84,21 @@ export default function NavbarClient({
 
           {/* ── Centre : liens navigation ── */}
           <nav className="hidden md:flex flex-1 items-center justify-center gap-1">
-            {CENTER_LINKS.map(({ href, label }) => (
+            {NAV_GROUP1.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  isActive(href)
+                    ? 'bg-white/15 text-white'
+                    : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+            <span className="mx-2 select-none text-white/20">|</span>
+            {NAV_GROUP2.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
