@@ -132,5 +132,5 @@ export async function POST(request: NextRequest) {
     console.error('[confirm-scan] checkLeagueTrophies:', err instanceof Error ? err.message : err)
   }
 
-  return NextResponse.json({ success: true, new_badges, new_trophies })
+  return NextResponse.json({ success: true, stickers_added: upsertCount, new_badges, new_trophies })
 }

@@ -114,6 +114,7 @@ function ResultsModal({
   const [phase, setPhase]           = useState<ModalPhase>('review')
   const [newBadges, setNewBadges]   = useState<Badge[]>([])
   const [newTrophies, setNewTrophies] = useState<Trophy[]>([])
+  const [confirmedCount, setConfirmedCount] = useState<number | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
   const matched      = sortByLastName(results.stickers.filter(s => s.status === 'matched'))
@@ -126,6 +127,7 @@ function ResultsModal({
     // Confirmer tous les packs en séquence
     const allBadges: Badge[] = []
     const allTrophies: Trophy[] = []
+    let totalAdded = 0
 
     for (const packId of results.packIds) {
       try {
@@ -135,12 +137,14 @@ function ResultsModal({
           body: JSON.stringify({ pack_id: packId, user_id: results.userId }),
         })
         const data = await res.json()
+        if (typeof data.stickers_added === 'number') totalAdded += data.stickers_added
         if (data.new_badges)  allBadges.push(...data.new_badges)
         if (data.new_trophies) allTrophies.push(...data.new_trophies)
       } catch (err) {
         console.error('[confirm-scan]', err)
       }
     }
+    setConfirmedCount(totalAdded)
 
     // Dédupliquer
     const seenB = new Set<string>()
@@ -178,7 +182,7 @@ function ResultsModal({
           {phase === 'confirmed' ? (
             <>
               <h2 className="text-xl font-bold text-white">
-                {matched.length} sticker{matched.length !== 1 ? 's' : ''} ajouté{matched.length !== 1 ? 's' : ''} ! ✅
+                {(confirmedCount ?? matched.length)} sticker{(confirmedCount ?? matched.length) !== 1 ? 's' : ''} ajouté{(confirmedCount ?? matched.length) !== 1 ? 's' : ''} ! ✅
               </h2>
               <p className="mt-1 text-xs text-gray-500">
                 Ta collection a été mise à jour.
