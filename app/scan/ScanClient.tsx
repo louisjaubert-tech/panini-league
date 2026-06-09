@@ -117,8 +117,8 @@ function ResultsModal({
   const [confirmedCount, setConfirmedCount] = useState<number | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  const matched      = sortByLastName(results.stickers.filter(s => s.status === 'matched'))
-  const unrecognised = results.stickers.filter(s => s.status !== 'matched')
+  const matched      = sortByLastName(results.stickers.filter(s => s.sticker_id !== null))
+  const unrecognised = results.stickers.filter(s => s.sticker_id === null)
 
   async function handleConfirm() {
     setPhase('confirming')
@@ -206,26 +206,29 @@ function ResultsModal({
         {/* ── Corps ── */}
         <div className="max-h-[50vh] overflow-y-auto p-6 space-y-6">
 
-          {/* Liste stickers reconnus */}
-          {matched.length > 0 && (
-            <ul className="space-y-2">
-              {matched.map((s, i) => (
-                <li key={i} className="flex items-center justify-between rounded-xl bg-white/5 px-4 py-2.5">
-                  <span className="text-sm font-medium text-white">{s.display_name}</span>
-                  {s.is_duplicate && (
-                    <span className="ml-2 shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-                      doublon
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {unrecognised.length > 0 && (
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-gray-400">
-              {unrecognised.length} sticker{unrecognised.length !== 1 ? 's' : ''} non reconnu{unrecognised.length !== 1 ? 's' : ''}
-            </div>
+          {/* Avant confirmation : liste stickers + non reconnus */}
+          {phase !== 'confirmed' && (
+            <>
+              {matched.length > 0 && (
+                <ul className="space-y-2">
+                  {matched.map((s, i) => (
+                    <li key={i} className="flex items-center justify-between rounded-xl bg-white/5 px-4 py-2.5">
+                      <span className="text-sm font-medium text-white">{s.display_name}</span>
+                      {s.is_duplicate && (
+                        <span className="ml-2 shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                          doublon
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {unrecognised.length > 0 && (
+                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-gray-400">
+                  {unrecognised.length} sticker{unrecognised.length !== 1 ? 's' : ''} non reconnu{unrecognised.length !== 1 ? 's' : ''}
+                </div>
+              )}
+            </>
           )}
 
           {/* Badges/trophées (phase confirmée uniquement) */}
@@ -415,7 +418,7 @@ export default function ScanClient() {
         }
 
         const data = await res.json() as ScanResult
-        const matchedCount = data.stickers.filter(s => s.status === 'matched').length
+        const matchedCount = data.stickers.filter(s => s.sticker_id !== null).length
 
         accumulated.stickers.push(...data.stickers)
         accumulated.packIds.push(packId)
