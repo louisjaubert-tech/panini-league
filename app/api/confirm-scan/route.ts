@@ -19,6 +19,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '`user_id` manquant.' }, { status: 400 })
   }
 
+  console.log(`[confirm-scan] ── DÉBUT ── pack_id=${pack_id} user_id=${user_id}`)
+
   // ── 1. Récupérer les stickers reconnus pour ce pack ────────
   const { data: scannedRows, error: scanErr } = await supabaseAdmin
     .from('scanned_stickers')
@@ -31,16 +33,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Impossible de lire les stickers scannés.' }, { status: 500 })
   }
 
+  console.log(`[confirm-scan] scanned_stickers: ${(scannedRows ?? []).length} ligne(s) récupérée(s) pour ce pack`)
+
   // Uniquement les stickers avec confidence >= 0.85 (matched)
   const matchedRows = (scannedRows ?? []).filter(
     (r) => (r.confidence as number) >= 0.85 && r.sticker_id,
   )
+
+  console.log(`[confirm-scan] stickers retenus (confidence >= 0.85) : ${matchedRows.length}`)
+  matchedRows.forEach((r, i) => {
+    console.log(`[confirm-scan]   [${i + 1}/${matchedRows.length}] sticker_id=${r.sticker_id} confidence=${r.confidence}`)
+  })
 
   // ── 2. Récupérer la collection actuelle pour calculer is_duplicate ─
   const { data: currentCollection } = await supabaseAdmin
     .from('user_collection')
     .select('id, sticker_id, quantity')
     .eq('user_id', user_id)
+
+  console.log(`[confirm-scan] user_collection actuelle : ${(currentCollection ?? []).length} sticker(s) déjà possédé(s)`)
 
   const collectionMap = new Map(
     (currentCollection ?? []).map((row) => [
@@ -50,30 +61,51 @@ export async function POST(request: NextRequest) {
   )
 
   // ── 3. Écrire dans user_collection ────────────────────────
+  let upsertCount = 0
+
   for (const row of matchedRows) {
     const sticker_id = row.sticker_id as string
     const existing = collectionMap.get(sticker_id)
 
     if (existing) {
-      await supabaseAdmin
+      const newQty = existing.quantity + 1
+      const { error: updateErr } = await supabaseAdmin
         .from('user_collection')
-        .update({ quantity: existing.quantity + 1 })
+        .update({ quantity: newQty })
         .eq('id', existing.id)
+
+      if (updateErr) {
+        console.error(`[confirm-scan] update user_collection ÉCHEC sticker_id=${sticker_id} id=${existing.id} :`, updateErr.message)
+      } else {
+        console.log(`[confirm-scan] update OK sticker_id=${sticker_id} quantity ${existing.quantity} → ${newQty} (doublon)`)
+        upsertCount++
+      }
       // Mettre à jour le map pour les doublons du même pack
-      collectionMap.set(sticker_id, { id: existing.id, quantity: existing.quantity + 1 })
+      collectionMap.set(sticker_id, { id: existing.id, quantity: newQty })
     } else {
-      await supabaseAdmin
+      const { error: insertErr } = await supabaseAdmin
         .from('user_collection')
         .insert({ user_id, sticker_id, quantity: 1, first_obtained_at: new Date().toISOString() })
+
+      if (insertErr) {
+        console.error(`[confirm-scan] insert user_collection ÉCHEC sticker_id=${sticker_id} :`, insertErr.message)
+      } else {
+        console.log(`[confirm-scan] insert OK sticker_id=${sticker_id} (nouveau)`)
+        upsertCount++
+      }
       collectionMap.set(sticker_id, { id: '', quantity: 1 })
     }
   }
+
+  console.log(`[confirm-scan] user_collection : ${upsertCount}/${matchedRows.length} ligne(s) mises à jour avec succès`)
 
   // ── 4. Mettre à jour ocr_status = 'done' ──────────────────
   await supabaseAdmin
     .from('pack_openings')
     .update({ ocr_status: 'done' })
     .eq('id', pack_id)
+
+  console.log(`[confirm-scan] pack_openings ocr_status → 'done' pour pack_id=${pack_id}`)
 
   // ── 5. Vérifier badges ────────────────────────────────────
   let new_badges: NewBadge[] = []
