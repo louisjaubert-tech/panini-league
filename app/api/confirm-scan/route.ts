@@ -35,12 +35,10 @@ export async function POST(request: NextRequest) {
 
   console.log(`[confirm-scan] scanned_stickers: ${(scannedRows ?? []).length} ligne(s) récupérée(s) pour ce pack`)
 
-  // Uniquement les stickers avec confidence >= 0.85 (matched)
-  const matchedRows = (scannedRows ?? []).filter(
-    (r) => (r.confidence as number) >= 0.85 && r.sticker_id,
-  )
+  // Tous les stickers avec sticker_id non null (le seuil de qualité est déjà appliqué dans matchSticker.ts)
+  const matchedRows = (scannedRows ?? []).filter((r) => r.sticker_id)
 
-  console.log(`[confirm-scan] stickers retenus (confidence >= 0.85) : ${matchedRows.length}`)
+  console.log(`[confirm-scan] stickers retenus (sticker_id non null) : ${matchedRows.length}`)
   matchedRows.forEach((r, i) => {
     console.log(`[confirm-scan]   [${i + 1}/${matchedRows.length}] sticker_id=${r.sticker_id} confidence=${r.confidence}`)
   })
