@@ -26,10 +26,42 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
+type LightboxEntry = { url: string; label: string }
+
 export default function RecentScansClient({ packs }: { packs: PackRow[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [lightbox, setLightbox] = useState<LightboxEntry | null>(null)
 
   return (
+    <>
+    {lightbox && (
+      <div
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 px-4"
+        onClick={() => setLightbox(null)}
+      >
+        <button
+          onClick={() => setLightbox(null)}
+          className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors text-lg"
+          aria-label="Fermer"
+        >
+          ✕
+        </button>
+        <p className="mb-3 text-sm font-medium text-white/70">{lightbox.label}</p>
+        <div
+          className="relative overflow-hidden rounded-xl"
+          style={{ maxWidth: '90vw', maxHeight: '90vh' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightbox.url}
+            alt="Scan agrandi"
+            style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', display: 'block' }}
+          />
+        </div>
+      </div>
+    )}
+
     <section className="mt-12">
       <h2 className="mb-4 text-base font-semibold text-white">📸 Derniers stickers scannés</h2>
 
@@ -53,7 +85,16 @@ export default function RecentScansClient({ packs }: { packs: PackRow[] }) {
                   } ${isExpanded ? 'rounded-b-none border-b-0' : ''}`}
                 >
                   {/* Miniature */}
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-white/10">
+                  <div
+                    className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-white/10 ${pack.photo_url ? 'cursor-zoom-in' : ''}`}
+                    onClick={(e) => {
+                      if (!pack.photo_url) return
+                      e.stopPropagation()
+                      const date = new Date(pack.opened_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+                      const label = `${date}${pack.stickers.length > 0 ? ` · ${pack.stickers.length} sticker${pack.stickers.length > 1 ? 's' : ''}` : ''}`
+                      setLightbox({ url: pack.photo_url, label })
+                    }}
+                  >
                     {pack.photo_url ? (
                       <Image
                         src={pack.photo_url}
@@ -129,5 +170,6 @@ export default function RecentScansClient({ packs }: { packs: PackRow[] }) {
         </ul>
       )}
     </section>
+    </>
   )
 }

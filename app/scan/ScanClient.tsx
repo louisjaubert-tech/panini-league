@@ -325,12 +325,19 @@ export default function ScanClient() {
   const [results, setResults]       = useState<AccumulatedResults | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
 
+  const MAX_PHOTOS = 5
+
   function handleFilesSelected(selected: FileList | null) {
     if (!selected || selected.length === 0) return
-    const arr = Array.from(selected)
+    let arr = Array.from(selected)
+    if (arr.length > MAX_PHOTOS) {
+      setUploadError(`⚠️ Maximum ${MAX_PHOTOS} photos à la fois. Tu as sélectionné ${arr.length} photos — seules les ${MAX_PHOTOS} premières seront analysées.`)
+      arr = arr.slice(0, MAX_PHOTOS)
+    } else {
+      setUploadError(null)
+    }
     setFiles(arr)
     setPreviews(arr.map((f) => URL.createObjectURL(f)))
-    setUploadError(null)
     setResults(null)
     setPhotoStatuses([])
   }
@@ -536,7 +543,7 @@ export default function ScanClient() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-300">Sélectionner une ou plusieurs photos</p>
-                <p className="mt-0.5 text-xs text-gray-500">Caméra · Galerie · Multi-sélection</p>
+                <p className="mt-0.5 text-xs text-gray-500">Caméra · Galerie · Multi-sélection (max 5 photos)</p>
               </div>
             </button>
           ) : (
