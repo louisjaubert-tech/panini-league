@@ -24,17 +24,12 @@ export default async function HomePage() {
           <Image
             src="/paninilogosansfond.png"
             alt="Panini Club"
-            width={200}
-            height={200}
+            width={260}
+            height={260}
             className="object-contain drop-shadow-2xl"
             priority
           />
         </div>
-
-        <h1 className="text-4xl font-black tracking-tight sm:text-5xl">
-          <span style={{ color: '#dc2626' }}>Panini</span>{' '}
-          <span style={{ color: '#ffd60a' }}>Club</span>
-        </h1>
 
         <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed sm:text-lg" style={{ color: '#94a3b8' }}>
           Qui complétera l&apos;album en premier ?{' '}
