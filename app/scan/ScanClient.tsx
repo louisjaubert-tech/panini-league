@@ -321,9 +321,17 @@ function ResultsModal({
           {phase === 'confirmed' && (
             <>
               {retractPhase === 'done' ? (
-                <p className="text-center text-sm text-green-400 py-1">
-                  ✅ Scan annulé — stickers retirés de ta collection
-                </p>
+                <>
+                  <p className="text-center text-sm text-green-400 py-1">
+                    ✅ Scan annulé — stickers retirés de ta collection
+                  </p>
+                  <button
+                    onClick={onDone}
+                    className="w-full rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-400 transition-colors"
+                  >
+                    Scanner d&apos;autres stickers
+                  </button>
+                </>
               ) : (
                 <>
                   <button
