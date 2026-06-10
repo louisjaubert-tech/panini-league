@@ -24,8 +24,8 @@ export default async function HomePage() {
           <Image
             src="/paninilogosansfond.png"
             alt="Panini Club"
-            width={260}
-            height={260}
+            width={340}
+            height={340}
             className="object-contain drop-shadow-2xl"
             priority
           />
