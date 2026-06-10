@@ -222,8 +222,8 @@ export default function RecentScansClient({ packs, userId }: { packs: PackRow[];
                             className="w-full rounded-lg border border-red-700/40 bg-red-900/20 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {isCancelling
-                              ? 'Retrait en cours…'
-                              : `↩️ Retirer ces ${pack.stickers.length} sticker${pack.stickers.length > 1 ? 's' : ''}`}
+                              ? 'Annulation en cours…'
+                              : `↩️ Annuler ce ScanPhoto et retirer ces ${pack.stickers.length} sticker${pack.stickers.length > 1 ? 's' : ''} de ma collection`}
                           </button>
                         </div>
                       )}
