@@ -102,7 +102,7 @@ export default async function ScanPage() {
     <main className="min-h-screen bg-[#0a1628] px-4 sm:px-6 py-12">
       <div className="mx-auto max-w-lg">
         <ScanClient />
-        <RecentScansClient packs={packs} />
+        <RecentScansClient packs={packs} userId={user.id} />
       </div>
     </main>
   )
