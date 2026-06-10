@@ -60,9 +60,15 @@ type ScanResult = { pack_id: string; stickers: StickerResult[] }
 type PhotoStatus = {
   index: number
   name: string
-  phase: 'waiting' | 'uploading' | 'analyzing' | 'done' | 'failed'
+  phase: 'waiting' | 'uploading' | 'analyzing' | 'done' | 'failed' | 'duplicate'
   error?: string
   stickerCount?: number
+}
+
+type DuplicateEntry = {
+  file: File
+  fileIndex: number          // 0-based dans le tableau files
+  existingPhotoUrl: string | null
 }
 
 type AccumulatedResults = {
@@ -85,9 +91,10 @@ function Spinner({ size = 5 }: { size?: number }) {
 }
 
 function phaseIcon(phase: PhotoStatus['phase']) {
-  if (phase === 'done')    return <span className="text-green-400">✓</span>
-  if (phase === 'failed')  return <span className="text-red-400">⚠️</span>
-  if (phase === 'waiting') return <span className="text-gray-600">○</span>
+  if (phase === 'done')      return <span className="text-green-400">✓</span>
+  if (phase === 'failed')    return <span className="text-red-400">⚠️</span>
+  if (phase === 'duplicate') return <span className="text-yellow-400">⚠️</span>
+  if (phase === 'waiting')   return <span className="text-gray-600">○</span>
   return <Spinner size={3} />
 }
 
@@ -98,6 +105,88 @@ function sortByLastName(stickers: StickerResult[]): StickerResult[] {
       (s.display_name ?? '').split(' ').pop()?.toLowerCase() ?? ''
     return lastName(a).localeCompare(lastName(b), 'fr')
   })
+}
+
+// ── Hash SHA-256 côté client ──────────────────────────────────────────────────
+
+async function computeHash(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer()
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// ── Alerte doublons ───────────────────────────────────────────────────────────
+
+function DuplicateAlert({
+  duplicates,
+  localPreviews,
+  onRescan,
+  onIgnore,
+}: {
+  duplicates: DuplicateEntry[]
+  localPreviews: string[]         // previews[fileIndex] pour chaque dup
+  onRescan: () => void
+  onIgnore: () => void
+}) {
+  const isSingle = duplicates.length === 1
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4">
+      <div className="w-full max-w-md rounded-2xl border border-yellow-500/30 bg-[#0f1e35] shadow-xl">
+        <div className="p-6 border-b border-white/10">
+          <h2 className="text-lg font-bold text-yellow-400">
+            ⚠️ {isSingle
+              ? 'Cette photo a déjà été scannée !'
+              : `${duplicates.length} photos semblent déjà avoir été scannées`}
+          </h2>
+          <p className="mt-1 text-xs text-gray-400">
+            {isSingle
+              ? 'Tu veux quand même la rescanner ?'
+              : 'Tu veux quand même les rescanner ?'}
+          </p>
+        </div>
+
+        {/* Miniatures */}
+        <div className="p-6 space-y-3 max-h-[40vh] overflow-y-auto">
+          {duplicates.map((dup) => (
+            <div key={dup.fileIndex} className="flex items-center gap-3">
+              {/* Photo soumise */}
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-white/10">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={localPreviews[dup.fileIndex]} alt="Nouvelle" className="h-full w-full object-cover" />
+              </div>
+              <div className="text-xs text-gray-400">
+                <p className="font-medium text-white">Photo {dup.fileIndex + 1}</p>
+                <p>Déjà présente dans tes scans</p>
+              </div>
+              {/* Photo originale si disponible */}
+              {dup.existingPhotoUrl && (
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-white/10 ml-auto opacity-60">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={dup.existingPhotoUrl} alt="Original" className="h-full w-full object-cover" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="p-6 border-t border-white/10 space-y-2">
+          <button
+            onClick={onRescan}
+            className="w-full rounded-lg bg-yellow-500 px-4 py-2.5 text-sm font-semibold text-gray-900 hover:bg-yellow-400 transition-colors"
+          >
+            Oui, rescanner quand même
+          </button>
+          <button
+            onClick={onIgnore}
+            className="w-full rounded-lg border border-white/15 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/10 transition-colors"
+          >
+            Non, ignorer
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // ── Modale résultats ──────────────────────────────────────────────────────────
@@ -373,8 +462,12 @@ export default function ScanClient() {
   const [currentIdx, setCurrentIdx]   = useState(0)
 
   // Résultats (en attente de confirmation)
-  const [results, setResults]       = useState<AccumulatedResults | null>(null)
-  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [results, setResults]         = useState<AccumulatedResults | null>(null)
+  const [uploadError, setUploadError]   = useState<string | null>(null)
+
+  // Détection doublons
+  const [duplicatesToReview, setDuplicatesToReview] = useState<DuplicateEntry[]>([])
+  const pendingAccumulatedRef = useRef<AccumulatedResults | null>(null)
 
   const MAX_PHOTOS = 5
 
@@ -412,42 +505,51 @@ export default function ScanClient() {
     )
   }
 
-  async function handleAnalyze() {
-    if (files.length === 0) return
-    setProcessing(true)
-    setUploadError(null)
+  /** Traite une liste de fichiers, en sautant la vérification hash si force=true */
+  async function processFiles(
+    filesToProcess: File[],
+    force: boolean,
+    baseAccumulated: AccumulatedResults,
+  ): Promise<{ accumulated: AccumulatedResults; duplicates: DuplicateEntry[] }> {
+    const accumulated: AccumulatedResults = { ...baseAccumulated }
+    const duplicates: DuplicateEntry[] = []
 
-    const initialStatuses: PhotoStatus[] = files.map((f, i) => ({
-      index: i + 1,
-      name: f.name,
-      phase: 'waiting',
-    }))
-    setPhotoStatuses(initialStatuses)
+    for (let i = 0; i < filesToProcess.length; i++) {
+      // index réel dans le tableau `files` (pour retrouver le preview)
+      const fileIndex = files.indexOf(filesToProcess[i])
+      const idx = fileIndex >= 0 ? fileIndex : i
+      setCurrentIdx(idx)
+      const file = filesToProcess[i]
 
-    const accumulated: AccumulatedResults = {
-      stickers: [],
-      packIds: [],
-      userId: '',
-      failedCount: 0,
-      successCount: 0,
-    }
-
-    for (let i = 0; i < files.length; i++) {
-      setCurrentIdx(i)
-      const file = files[i]
-
-      // ── 1. Upload ──────────────────────────────────────────
-      updateStatus(i, { phase: 'uploading' })
+      // ── 1. Upload (avec hash) ──────────────────────────────
+      updateStatus(idx, { phase: 'uploading' })
 
       const fd = new FormData()
       fd.append('photo', file)
+      if (force) fd.append('force', 'true')
+
+      // Calcul du hash SHA-256 côté client
+      try {
+        const hash = await computeHash(file)
+        fd.append('photo_hash', hash)
+      } catch {
+        // si crypto.subtle non disponible, on continue sans hash
+      }
 
       let packId: string
       let userId: string
       try {
         const uploadResult = await uploadPack({}, fd)
+
+        // ── Doublon détecté ──────────────────────────────────
+        if (uploadResult.duplicate) {
+          updateStatus(idx, { phase: 'duplicate', error: 'Déjà scannée' })
+          duplicates.push({ file, fileIndex: idx, existingPhotoUrl: uploadResult.existing_photo_url ?? null })
+          continue
+        }
+
         if (uploadResult.error || !uploadResult.pack_id || !uploadResult.user_id) {
-          updateStatus(i, { phase: 'failed', error: uploadResult.error ?? 'Upload échoué' })
+          updateStatus(idx, { phase: 'failed', error: uploadResult.error ?? 'Upload échoué' })
           accumulated.failedCount++
           continue
         }
@@ -455,13 +557,13 @@ export default function ScanClient() {
         userId = uploadResult.user_id
         if (!accumulated.userId) accumulated.userId = userId
       } catch (err) {
-        updateStatus(i, { phase: 'failed', error: err instanceof Error ? err.message : 'Erreur upload' })
+        updateStatus(idx, { phase: 'failed', error: err instanceof Error ? err.message : 'Erreur upload' })
         accumulated.failedCount++
         continue
       }
 
       // ── 2. Analyse IA ──────────────────────────────────────
-      updateStatus(i, { phase: 'analyzing' })
+      updateStatus(idx, { phase: 'analyzing' })
 
       try {
         const res = await fetch('/api/scan-process', {
@@ -482,16 +584,63 @@ export default function ScanClient() {
         accumulated.packIds.push(packId)
         accumulated.successCount++
 
-        updateStatus(i, { phase: 'done', stickerCount: matchedCount })
+        updateStatus(idx, { phase: 'done', stickerCount: matchedCount })
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Analyse échouée'
-        updateStatus(i, { phase: 'failed', error: msg })
+        updateStatus(idx, { phase: 'failed', error: msg })
         accumulated.failedCount++
       }
     }
 
-    setResults(accumulated)
+    return { accumulated, duplicates }
+  }
+
+  async function handleAnalyze() {
+    if (files.length === 0) return
+    setProcessing(true)
+    setUploadError(null)
+    setDuplicatesToReview([])
+
+    setPhotoStatuses(files.map((f, i) => ({
+      index: i + 1,
+      name: f.name,
+      phase: 'waiting' as const,
+    })))
+
+    const emptyAccumulated: AccumulatedResults = {
+      stickers: [], packIds: [], userId: '', failedCount: 0, successCount: 0,
+    }
+
+    const { accumulated, duplicates } = await processFiles(files, false, emptyAccumulated)
     setProcessing(false)
+
+    if (duplicates.length > 0) {
+      pendingAccumulatedRef.current = accumulated
+      setDuplicatesToReview(duplicates)
+    } else {
+      setResults(accumulated)
+    }
+  }
+
+  async function handleDuplicateRescan() {
+    const base = pendingAccumulatedRef.current ?? {
+      stickers: [], packIds: [], userId: '', failedCount: 0, successCount: 0,
+    }
+    const filesToRescan = duplicatesToReview.map(d => d.file)
+    setDuplicatesToReview([])
+    setProcessing(true)
+
+    const { accumulated } = await processFiles(filesToRescan, true, base)
+    setProcessing(false)
+    setResults(accumulated)
+  }
+
+  function handleDuplicateIgnore() {
+    const accumulated = pendingAccumulatedRef.current ?? {
+      stickers: [], packIds: [], userId: '', failedCount: 0, successCount: 0,
+    }
+    setDuplicatesToReview([])
+    setResults(accumulated)
   }
 
   const total = files.length
@@ -546,9 +695,10 @@ export default function ScanClient() {
               <li
                 key={s.index}
                 className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm transition-colors ${
-                  s.phase === 'done'    ? 'bg-green-500/10 border border-green-500/20' :
-                  s.phase === 'failed' ? 'bg-red-500/10 border border-red-500/20' :
-                  s.phase === 'waiting'? 'bg-white/[0.03] border border-white/5' :
+                  s.phase === 'done'      ? 'bg-green-500/10 border border-green-500/20' :
+                  s.phase === 'failed'    ? 'bg-red-500/10 border border-red-500/20' :
+                  s.phase === 'duplicate' ? 'bg-yellow-500/10 border border-yellow-500/20' :
+                  s.phase === 'waiting'   ? 'bg-white/[0.03] border border-white/5' :
                   'bg-orange-500/10 border border-orange-500/20'
                 }`}
               >
@@ -558,6 +708,9 @@ export default function ScanClient() {
                 </span>
                 {s.phase === 'done' && s.stickerCount !== undefined && (
                   <span className="shrink-0 text-xs text-green-400">{s.stickerCount} sticker{s.stickerCount !== 1 ? 's' : ''}</span>
+                )}
+                {s.phase === 'duplicate' && (
+                  <span className="shrink-0 text-xs text-yellow-400">Déjà scannée</span>
                 )}
                 {s.phase === 'failed' && s.error && (
                   <span className="shrink-0 text-xs text-red-400 truncate max-w-[120px]">{s.error}</span>
@@ -643,6 +796,43 @@ export default function ScanClient() {
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Alerte doublons ── */}
+      {!processing && duplicatesToReview.length > 0 && (
+        <>
+          {/* Statuts visibles derrière la modale */}
+          <div className="space-y-1.5 mb-4">
+            {photoStatuses.map((s) => (
+              <div
+                key={s.index}
+                className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm ${
+                  s.phase === 'done'      ? 'bg-green-500/10 border border-green-500/20' :
+                  s.phase === 'duplicate' ? 'bg-yellow-500/10 border border-yellow-500/20' :
+                  s.phase === 'failed'    ? 'bg-red-500/10 border border-red-500/20' : 'bg-white/5'
+                }`}
+              >
+                <span className="w-4 text-center text-xs">{phaseIcon(s.phase)}</span>
+                <span className="flex-1 text-gray-300">Photo {s.index}/{total}</span>
+                {s.phase === 'done' && s.stickerCount !== undefined && (
+                  <span className="text-xs text-green-400">{s.stickerCount} sticker{s.stickerCount !== 1 ? 's' : ''}</span>
+                )}
+                {s.phase === 'duplicate' && (
+                  <span className="text-xs text-yellow-400">Déjà scannée</span>
+                )}
+                {s.phase === 'failed' && (
+                  <span className="text-xs text-red-400">{s.error ?? 'Échouée'}</span>
+                )}
+              </div>
+            ))}
+          </div>
+          <DuplicateAlert
+            duplicates={duplicatesToReview}
+            localPreviews={previews}
+            onRescan={handleDuplicateRescan}
+            onIgnore={handleDuplicateIgnore}
+          />
+        </>
       )}
 
       {/* ── Résultats après traitement — log visible derrière la modale ── */}
