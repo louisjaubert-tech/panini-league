@@ -190,7 +190,7 @@ function CountryRow({
               <li key={s.sticker_id} className="flex items-center justify-between gap-2 py-0.5">
                 <span className={`text-sm truncate flex-1 ${s.owned ? 'text-white' : 'text-gray-600'}`}>
                   {s.owned ? '✓ ' : '○ '}{s.display_name}
-                  {s.quantity > 1 && (
+                  {s.owned && (
                     <span className="ml-1.5 text-xs text-amber-500">×{s.quantity}</span>
                   )}
                 </span>
