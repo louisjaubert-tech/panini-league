@@ -235,9 +235,9 @@ export async function fetchTrophyProgress(
     collMap.get(r.user_id as string)?.add(r.sticker_id as string)
   }
 
-  // 4. Référence stickers (utile pour lt02 et lt04)
+  // 4. Référence stickers (utile pour b12 et b14)
   let refRows: { sticker_id: string; country: string }[] = []
-  if (trophyId === 'lt02' || trophyId === 'lt04') {
+  if (trophyId === 'b12' || trophyId === 'b14') {
     const { data } = await supabaseAdmin
       .from('stickers_reference')
       .select('sticker_id, country')
@@ -247,11 +247,10 @@ export async function fetchTrophyProgress(
   // 5. Calcul du % par membre
   function computeProgress(owned: Set<string>): number {
     switch (trophyId) {
-      case 'lt01': {
+      case 'b11': {
         return Math.min(100, Math.round((owned.size / 960) * 100))
       }
-      case 'lt02': {
-        // Max % de complétion d'une équipe
+      case 'b12': {
         const refByCountry = new Map<string, number>()
         const ownedByCountry = new Map<string, number>()
         for (const r of refRows) {
@@ -270,30 +269,30 @@ export async function fetchTrophyProgress(
         }
         return Math.min(100, max)
       }
-      case 'lt03': {
+      case 'b13': {
         const targets = ['106', '107', '108', '109']
         const have = targets.filter(id => owned.has(id)).length
         return Math.round((have / 4) * 100)
       }
-      case 'lt04': {
-        const fraIds = refRows.filter(r => r.country === 'FRA').map(r => r.sticker_id)
+      case 'b14': {
+        const fraIds = refRows.filter(r => r.country === 'France').map(r => r.sticker_id)
         if (fraIds.length === 0) return 0
         const have = fraIds.filter(id => owned.has(id)).length
         return Math.min(100, Math.round((have / fraIds.length) * 100))
       }
-      case 'lt05': {
+      case 'b15': {
         const targets = ['JOR15', 'GHA5', 'CIV11', 'SUI17']
         return Math.round((targets.filter(id => owned.has(id)).length / 4) * 100)
       }
-      case 'lt06': {
+      case 'b16': {
         const targets = ['KOR7', 'KOR8', 'KOR9', 'KOR10', 'KOR12', 'KOR16']
         return Math.round((targets.filter(id => owned.has(id)).length / 6) * 100)
       }
-      case 'lt07': {
+      case 'b17': {
         const targets = ['ESP10', 'FRA15', 'ARG17', 'POR15', 'CRO9']
         return Math.round((targets.filter(id => owned.has(id)).length / 5) * 100)
       }
-      case 'lt08': {
+      case 'b18': {
         const have = [...owned].filter(id => id.endsWith('2')).length
         return Math.min(100, Math.round((have / 48) * 100))
       }
@@ -327,14 +326,14 @@ export async function fetchLeagueTrophies(
   }
 
   const TROPHY_NAMES: Record<string, string> = {
-    lt01: 'Trophée Platine',
-    lt02: 'Trophée du Pionnier',
-    lt03: 'Trophée Jules Rimet',
-    lt04: 'Trophée La France',
-    lt05: 'Trophée Galette Saucisse',
-    lt06: 'Trophée du Repos Bien Mérité',
-    lt07: 'Trophée des Grosses Boules Dorées',
-    lt08: 'Trophée Lev Yachine',
+    b11: 'Trophée Platine',
+    b12: 'Trophée Équipe Complète',
+    b13: 'Trophée Jules Rimet',
+    b14: 'Trophée La France',
+    b15: 'Trophée Galette Saucisse',
+    b16: 'Trophée Repos Bien Mérité',
+    b17: 'Trophée Grosses Boules Dorées',
+    b18: 'Trophée Lev Yachine',
   }
 
   return (data ?? []).map((row) => {

@@ -25,6 +25,14 @@ const BADGE_META: Record<string, { stars: number; description?: string }> = {
   b08: { stars: 3 },
   b09: { stars: 3 },
   b10: { stars: 2 },
+  b11: { stars: 3 },
+  b12: { stars: 2, description: 'Progression : % de complétion de ton équipe la plus avancée' },
+  b13: { stars: 1 },
+  b14: { stars: 2 },
+  b15: { stars: 1 },
+  b16: { stars: 1 },
+  b17: { stars: 2 },
+  b18: { stars: 3 },
 }
 
 function getStars(badge_id: string): number {

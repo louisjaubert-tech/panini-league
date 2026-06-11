@@ -217,14 +217,14 @@ function GeneralTab({ initial }: { initial: LeaderboardRow[] }) {
 // ── Section trophées de la ligue ─────────────────────────────────────────────
 
 const ALL_TROPHIES = [
-  { trophy_id: 'lt01', name: 'Trophée Platine',                    description: "Premier à compléter l'album entier (960 stickers)" },
-  { trophy_id: 'lt02', name: 'Trophée du Pionnier',                description: 'Premier à compléter une équipe nationale entière' },
-  { trophy_id: 'lt03', name: 'Trophée Jules Rimet',                description: "Premier à avoir les 4 stickers de l'Histoire de la Coupe du Monde (106, 107, 108, 109)" },
-  { trophy_id: 'lt04', name: 'Trophée La France',                  description: "Premier à compléter la double page de l'équipe de France" },
-  { trophy_id: 'lt05', name: 'Trophée Galette Saucisse',           description: 'Premier à avoir les 4 joueurs du Stade Rennais : JOR15, GHA5, CIV11, SUI17' },
-  { trophy_id: 'lt06', name: 'Trophée du Repos Bien Mérité',       description: 'Premier à avoir les 6 Lee de Corée du Sud : KOR7, KOR8, KOR9, KOR10, KOR12, KOR16' },
-  { trophy_id: 'lt07', name: 'Trophée des Grosses Boules Dorées',  description: 'Premier à avoir tous les Ballons d\'Or : ESP10, FRA15, ARG17, POR15, CRO9' },
-  { trophy_id: 'lt08', name: 'Trophée Lev Yachine',                description: 'Premier à avoir tous les gardiens titulaires de l\'album (les X2 de chaque sélection)' },
+  { trophy_id: 'b11', name: 'Trophée Platine',              description: "Premier à compléter l'album entier (960 stickers)" },
+  { trophy_id: 'b12', name: 'Trophée Équipe Complète',      description: 'Premier à compléter une équipe nationale entière' },
+  { trophy_id: 'b13', name: 'Trophée Jules Rimet',          description: "Premier à avoir les 4 stickers de l'Histoire de la Coupe du Monde (106, 107, 108, 109)" },
+  { trophy_id: 'b14', name: 'Trophée La France',            description: "Premier à compléter la double page de l'équipe de France" },
+  { trophy_id: 'b15', name: 'Trophée Galette Saucisse',     description: 'Premier à avoir les 4 joueurs du Stade Rennais : JOR15, GHA5, CIV11, SUI17' },
+  { trophy_id: 'b16', name: 'Trophée Repos Bien Mérité',    description: 'Premier à avoir les 6 Lee de Corée du Sud : KOR7, KOR8, KOR9, KOR10, KOR12, KOR16' },
+  { trophy_id: 'b17', name: 'Trophée Grosses Boules Dorées', description: "Premier à avoir tous les Ballons d'Or : ESP10, FRA15, ARG17, POR15, CRO9" },
+  { trophy_id: 'b18', name: 'Trophée Lev Yachine',          description: 'Premier à avoir tous les gardiens titulaires de l\'album (les X2 de chaque sélection)' },
 ]
 
 function TrophiesSection({

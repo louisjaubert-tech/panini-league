@@ -101,6 +101,45 @@ function evaluateBadge(badge: BadgeRef, stats: Stats): boolean {
       }
       return false
 
+    case 'hardcoded':
+      switch (badge.badge_id) {
+        case 'b11':
+          return stats.totalUnique >= 960
+        case 'b12': {
+          let maxPct = 0
+          for (const [country, owned] of stats.countryMap.entries()) {
+            const expected = stats.refCountryTotal.get(country) ?? 0
+            if (expected > 0) {
+              const pct = owned / expected
+              if (pct > maxPct) maxPct = pct
+            }
+          }
+          return maxPct >= 1
+        }
+        case 'b13':
+          return ['106', '107', '108', '109'].every(id => stats.ownedStickerIds.has(id))
+        case 'b14': {
+          let totalFra = 0, ownedFra = 0
+          for (const [country, total] of stats.refCountryTotal.entries()) {
+            if (country === 'France') { totalFra = total; ownedFra = stats.countryMap.get(country) ?? 0 }
+          }
+          return totalFra > 0 && ownedFra >= totalFra
+        }
+        case 'b15':
+          return ['JOR15', 'GHA5', 'CIV11', 'SUI17'].every(id => stats.ownedStickerIds.has(id))
+        case 'b16':
+          return ['KOR7', 'KOR8', 'KOR9', 'KOR10', 'KOR12', 'KOR16'].every(id => stats.ownedStickerIds.has(id))
+        case 'b17':
+          return ['ESP10', 'FRA15', 'ARG17', 'POR15', 'CRO9'].every(id => stats.ownedStickerIds.has(id))
+        case 'b18': {
+          // 48 stickers X2 au total dans l'album (un par sélection) — posséder les 48 = tous les gardiens
+          const owned2 = [...stats.ownedStickerIds].filter(id => id.endsWith('2')).length
+          return owned2 >= 48
+        }
+        default:
+          return false
+      }
+
     default:
       console.warn(`[checkBadges] condition_type inconnu : ${badge.condition_type}`)
       return false
@@ -250,14 +289,14 @@ export type NewTrophy = {
 }
 
 const LEAGUE_TROPHIES: { trophy_id: string; name: string }[] = [
-  { trophy_id: 'lt01', name: 'Trophée Platine' },
-  { trophy_id: 'lt02', name: 'Trophée du Pionnier' },
-  { trophy_id: 'lt03', name: 'Trophée Jules Rimet' },
-  { trophy_id: 'lt04', name: 'Trophée La France' },
-  { trophy_id: 'lt05', name: 'Trophée Galette Saucisse' },
-  { trophy_id: 'lt06', name: 'Trophée du Repos Bien Mérité' },
-  { trophy_id: 'lt07', name: 'Trophée des Grosses Boules Dorées' },
-  { trophy_id: 'lt08', name: 'Trophée Lev Yachine' },
+  { trophy_id: 'b11', name: 'Trophée Platine' },
+  { trophy_id: 'b12', name: 'Trophée Équipe Complète' },
+  { trophy_id: 'b13', name: 'Trophée Jules Rimet' },
+  { trophy_id: 'b14', name: 'Trophée La France' },
+  { trophy_id: 'b15', name: 'Trophée Galette Saucisse' },
+  { trophy_id: 'b16', name: 'Trophée Repos Bien Mérité' },
+  { trophy_id: 'b17', name: 'Trophée Grosses Boules Dorées' },
+  { trophy_id: 'b18', name: 'Trophée Lev Yachine' },
 ]
 
 function checkTrophyCondition(
@@ -266,11 +305,10 @@ function checkTrophyCondition(
   allRefs: StickerRef[],
 ): boolean {
   switch (trophy_id) {
-    case 'lt01':
+    case 'b11':
       return owned.size >= 960
 
-    case 'lt02': {
-      // Au moins une équipe nationale complète
+    case 'b12': {
       const refByCountry = new Map<string, number>()
       const ownedByCountry = new Map<string, number>()
       for (const r of allRefs) {
@@ -286,26 +324,24 @@ function checkTrophyCondition(
       return false
     }
 
-    case 'lt03':
+    case 'b13':
       return ['106', '107', '108', '109'].every((id) => owned.has(id))
 
-    case 'lt04': {
-      // Tous les stickers country = 'FRA'
-      const fraIds = allRefs.filter((r) => r.country === 'FRA').map((r) => r.sticker_id)
+    case 'b14': {
+      const fraIds = allRefs.filter((r) => r.country === 'France').map((r) => r.sticker_id)
       return fraIds.length > 0 && fraIds.every((id) => owned.has(id))
     }
 
-    case 'lt05':
+    case 'b15':
       return ['JOR15', 'GHA5', 'CIV11', 'SUI17'].every((id) => owned.has(id))
 
-    case 'lt06':
+    case 'b16':
       return ['KOR7', 'KOR8', 'KOR9', 'KOR10', 'KOR12', 'KOR16'].every((id) => owned.has(id))
 
-    case 'lt07':
+    case 'b17':
       return ['ESP10', 'FRA15', 'ARG17', 'POR15', 'CRO9'].every((id) => owned.has(id))
 
-    case 'lt08': {
-      // Tous les stickers dont sticker_id se termine par '2' ET category = 'Player'
+    case 'b18': {
       const targets = allRefs.filter(
         (r) => r.sticker_id.endsWith('2') && r.category === 'Player',
       )
