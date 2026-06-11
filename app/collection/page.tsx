@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import CollectionClient, { type CountryData } from './CollectionClient'
+import CollectionClient, { type CountryData, type BadgeSectionData } from './CollectionClient'
 import { getContinent } from '@/lib/continents'
 
 /** Extrait le numéro de fin d'un sticker_id (ex: FRA20 → 20) */
@@ -11,7 +11,7 @@ function stickerNumber(id: string): number {
   return m ? parseInt(m[1], 10) : 0
 }
 
-// Pays à exclure du classement (stickers spéciaux, badges, etc.)
+// Pays à exclure du classement (stickers spéciaux)
 const EXCLUDED_COUNTRIES = new Set(['Special', 'FIFA World Cup'])
 
 export default async function CollectionPage() {
@@ -27,7 +27,7 @@ export default async function CollectionPage() {
   const [refResult, collectionResult] = await Promise.all([
     supabaseAdmin
       .from('stickers_reference')
-      .select('sticker_id, display_name, country'),
+      .select('sticker_id, display_name, country, category'),
     supabaseAdmin
       .from('user_collection')
       .select('sticker_id, quantity')
@@ -38,13 +38,17 @@ export default async function CollectionPage() {
     sticker_id: string
     display_name: string
     country: string
+    category: string
   }[]
 
   const collectionRows = (collectionResult.data ?? []) as { sticker_id: string; quantity: number }[]
-  const ownedIds  = new Set(collectionRows.map((r) => r.sticker_id))
+  const ownedIds    = new Set(collectionRows.map((r) => r.sticker_id))
   const quantityMap = new Map(collectionRows.map((r) => [r.sticker_id, r.quantity]))
 
-  // ── Grouper par pays ──────────────────────────────────────────
+  // ── Séparer joueurs / emblèmes / team photos ───────────────────
+  const emblems: { sticker_id: string; display_name: string; country: string; owned: boolean; quantity: number }[] = []
+  const teamPhotos: { sticker_id: string; display_name: string; country: string; owned: boolean; quantity: number }[] = []
+
   const countryMap = new Map<
     string,
     { sticker_id: string; display_name: string; owned: boolean; quantity: number }[]
@@ -52,16 +56,31 @@ export default async function CollectionPage() {
 
   for (const s of allStickers) {
     if (EXCLUDED_COUNTRIES.has(s.country)) continue
-    if (!countryMap.has(s.country)) countryMap.set(s.country, [])
-    countryMap.get(s.country)!.push({
-      sticker_id: s.sticker_id,
-      display_name: s.display_name,
-      owned: ownedIds.has(s.sticker_id),
-      quantity: quantityMap.get(s.sticker_id) ?? 0,
-    })
+
+    const owned = ownedIds.has(s.sticker_id)
+    const quantity = quantityMap.get(s.sticker_id) ?? 0
+    const entry = { sticker_id: s.sticker_id, display_name: s.display_name, country: s.country, owned, quantity }
+
+    if (s.category === 'badge') {
+      if (s.display_name.toLowerCase().includes('team photo')) {
+        teamPhotos.push(entry)
+      } else {
+        emblems.push(entry)
+      }
+    } else {
+      // player (et autres)
+      if (!countryMap.has(s.country)) countryMap.set(s.country, [])
+      countryMap.get(s.country)!.push({ sticker_id: s.sticker_id, display_name: s.display_name, owned, quantity })
+    }
   }
 
-  // ── Construire le tableau de données pays ─────────────────────
+  // Trier emblèmes et team photos par pays alphabétique
+  const sortByCountry = (a: { country: string }, b: { country: string }) =>
+    a.country.localeCompare(b.country, 'fr')
+  emblems.sort(sortByCountry)
+  teamPhotos.sort(sortByCountry)
+
+  // ── Construire le tableau de données pays (joueurs) ────────────
   const countries: CountryData[] = []
 
   for (const [country, stickers] of countryMap.entries()) {
@@ -69,7 +88,6 @@ export default async function CollectionPage() {
     const total = stickers.length
     const pct = total > 0 ? Math.round((ownedCount / total) * 100) : 0
 
-    // Trier par numéro de sticker (ex: FRA1 < FRA20)
     stickers.sort((a, b) => stickerNumber(a.sticker_id) - stickerNumber(b.sticker_id))
 
     countries.push({
@@ -82,11 +100,23 @@ export default async function CollectionPage() {
     })
   }
 
-  // Trier par taux de complétion décroissant, puis alphabétique
   countries.sort((a, b) => {
     if (b.pct !== a.pct) return b.pct - a.pct
     return a.country.localeCompare(b.country)
   })
+
+  // ── Données sections badge ─────────────────────────────────────
+  const emblemSection: BadgeSectionData = {
+    title: '🛡️ Emblèmes des sélections',
+    items: emblems,
+    ownedCount: emblems.filter((s) => s.owned).length,
+  }
+
+  const teamPhotoSection: BadgeSectionData = {
+    title: '📸 Photos d\'équipe',
+    items: teamPhotos,
+    ownedCount: teamPhotos.filter((s) => s.owned).length,
+  }
 
   return (
     <main className="min-h-screen px-4 sm:px-6 lg:px-8 py-10" style={{ backgroundColor: '#0a1628' }}>
@@ -101,7 +131,11 @@ export default async function CollectionPage() {
           </p>
         </div>
 
-        <CollectionClient countries={countries} />
+        <CollectionClient
+          countries={countries}
+          emblemSection={emblemSection}
+          teamPhotoSection={teamPhotoSection}
+        />
       </div>
     </main>
   )

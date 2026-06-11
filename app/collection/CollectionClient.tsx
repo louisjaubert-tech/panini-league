@@ -19,6 +19,12 @@ export type CountryData = {
   stickers: StickerItem[]
 }
 
+export type BadgeSectionData = {
+  title: string
+  items: (StickerItem & { country: string })[]
+  ownedCount: number
+}
+
 const CONTINENTS = ['Tous', 'Europe', 'Amérique', 'Asie', 'Afrique', 'Océanie']
 
 type SortBy = 'pct' | 'alpha'
@@ -124,6 +130,85 @@ function StickerControls({
   )
 }
 
+// ── Section emblèmes / team photos ───────────────────────────────────────────
+
+function BadgeSection({
+  section,
+  onAdd,
+  onRemove,
+}: {
+  section: BadgeSectionData
+  onAdd: (id: string, qty: number) => Promise<void>
+  onRemove: (id: string) => Promise<void>
+}) {
+  const [open, setOpen] = useState(false)
+  const total = section.items.length
+
+  return (
+    <div className="rounded-xl border border-white/10 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-white/5 transition-colors"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="font-semibold text-white truncate">{section.title}</span>
+            <span className="ml-3 shrink-0 text-sm font-medium" style={{ color: '#ffd60a' }}>
+              {section.ownedCount}/{total}
+            </span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full transition-all duration-500 bg-white/30"
+              style={{ width: `${total > 0 ? Math.round((section.ownedCount / total) * 100) : 0}%` }}
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <span className="text-sm text-gray-400 tabular-nums w-10 text-right">
+            {total > 0 ? Math.round((section.ownedCount / total) * 100) : 0}%
+          </span>
+          <svg
+            className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+
+      {open && (
+        <div className="border-t border-white/10 px-5 py-3 bg-black/20">
+          <ul className="space-y-1">
+            {section.items.map((s) => (
+              <li key={s.sticker_id} className="flex items-center justify-between gap-2 py-0.5">
+                <span className={`text-sm truncate flex-1 ${s.owned ? 'text-white' : 'text-gray-600'}`}>
+                  {s.owned ? '✓ ' : '○ '}
+                  <span className="text-gray-400 text-xs mr-1">{s.country}</span>
+                  {s.display_name}
+                  {s.owned && (
+                    <span className="ml-1.5 text-xs text-amber-500">×{s.quantity}</span>
+                  )}
+                </span>
+                <StickerControls
+                  stickerId={s.sticker_id}
+                  owned={s.owned}
+                  onAdd={onAdd}
+                  onRemove={onRemove}
+                />
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-gray-600 italic">
+            Ces stickers ne sont pas reconnus par le scanner — ajout manuel uniquement.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Accordion pays ────────────────────────────────────────────────────────────
 
 function CountryRow({
@@ -211,8 +296,18 @@ function CountryRow({
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
-export default function CollectionClient({ countries: initialCountries }: { countries: CountryData[] }) {
+export default function CollectionClient({
+  countries: initialCountries,
+  emblemSection: initialEmblemSection,
+  teamPhotoSection: initialTeamPhotoSection,
+}: {
+  countries: CountryData[]
+  emblemSection: BadgeSectionData
+  teamPhotoSection: BadgeSectionData
+}) {
   const [countries, setCountries] = useState<CountryData[]>(initialCountries)
+  const [emblemSection, setEmblemSection] = useState<BadgeSectionData>(initialEmblemSection)
+  const [teamPhotoSection, setTeamPhotoSection] = useState<BadgeSectionData>(initialTeamPhotoSection)
   const [activeContinent, setActiveContinent] = useState('Tous')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortBy>('pct')
@@ -227,6 +322,7 @@ export default function CollectionClient({ countries: initialCountries }: { coun
 
   // ── Mise à jour optimiste de la quantité d'un sticker ──────────────────────
   function applyDelta(stickerId: string, delta: number) {
+    // Joueurs
     setCountries((prev) =>
       prev.map((country) => {
         const idx = country.stickers.findIndex((s) => s.sticker_id === stickerId)
@@ -241,6 +337,28 @@ export default function CollectionClient({ countries: initialCountries }: { coun
         return { ...country, stickers, ownedCount, pct }
       })
     )
+    // Emblèmes
+    setEmblemSection((prev) => {
+      const idx = prev.items.findIndex((s) => s.sticker_id === stickerId)
+      if (idx === -1) return prev
+      const items = prev.items.map((s, i) => {
+        if (i !== idx) return s
+        const newQty = Math.max(0, s.quantity + delta)
+        return { ...s, quantity: newQty, owned: newQty > 0 }
+      })
+      return { ...prev, items, ownedCount: items.filter((s) => s.owned).length }
+    })
+    // Team photos
+    setTeamPhotoSection((prev) => {
+      const idx = prev.items.findIndex((s) => s.sticker_id === stickerId)
+      if (idx === -1) return prev
+      const items = prev.items.map((s, i) => {
+        if (i !== idx) return s
+        const newQty = Math.max(0, s.quantity + delta)
+        return { ...s, quantity: newQty, owned: newQty > 0 }
+      })
+      return { ...prev, items, ownedCount: items.filter((s) => s.owned).length }
+    })
   }
 
   const handleAdd = useCallback(async (stickerId: string, qty: number) => {
@@ -375,6 +493,15 @@ export default function CollectionClient({ countries: initialCountries }: { coun
           ))
         )}
       </div>
+
+      {/* ── Sections badges (emblèmes + team photos) ── */}
+      {!isSearching && (
+        <div className="space-y-2 pt-2 border-t border-white/10">
+          <p className="text-xs text-gray-500 pb-1">Stickers non scannables — ajout manuel uniquement</p>
+          <BadgeSection section={emblemSection} onAdd={handleAdd} onRemove={handleRemove} />
+          <BadgeSection section={teamPhotoSection} onAdd={handleAdd} onRemove={handleRemove} />
+        </div>
+      )}
 
       <ToastList toasts={toasts} />
     </div>
