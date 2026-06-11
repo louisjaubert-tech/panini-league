@@ -685,10 +685,8 @@ export default function ScanClient({ isGuest = false }: { isGuest?: boolean }) {
           logos de sélections nationales et pages spéciales ne sont pas comptabilisés pour l&apos;instant.
         </p>
         <p className="mt-2 rounded-xl bg-white/5 px-4 py-3 text-xs text-gray-400">
-          💡 Tu peux aussi ajouter des stickers à ta collection manuellement sur la page{' '}
-          <a href="/collection" className="font-semibold text-orange-400 hover:text-orange-300 underline underline-offset-2 transition-colors">
-            Ma collection
-          </a>.
+          💡 Tu peux aussi ajouter des stickers manuellement sur la page{' '}
+          <a href="/collection" className="font-semibold text-orange-400 hover:text-orange-300 underline underline-offset-2 transition-colors whitespace-nowrap">Ma collection</a>.
         </p>
       </div>
 

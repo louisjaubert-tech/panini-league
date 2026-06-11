@@ -15,7 +15,7 @@ export default function RegisterPage() {
             <h1 className="text-2xl font-bold text-white">Créer un compte</h1>
             <p className="mt-1 text-sm text-gray-400">
               Déjà inscrit ?{' '}
-              <Link href="/login" className="text-red-400 hover:text-red-300 font-medium">
+              <Link href="/login" className="text-orange-400 hover:text-orange-300 font-medium">
                 Se connecter
               </Link>
             </p>
@@ -78,7 +78,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={pending}
-              className="w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              className="w-full rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
               {pending ? 'Inscription…' : 'Créer mon compte'}
             </button>

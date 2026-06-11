@@ -282,7 +282,9 @@ function CountryRow({
             {visibleStickers.map((s) => (
               <li key={s.sticker_id} className="flex items-center justify-between gap-2 py-0.5">
                 <span className={`text-sm truncate flex-1 ${s.owned ? 'text-white' : 'text-gray-600'}`}>
-                  {s.owned ? '✓ ' : '○ '}{s.display_name}
+                  {s.owned ? '✓ ' : '○ '}
+                  <span className="text-gray-500 text-xs mr-1">{s.sticker_id}</span>
+                  {s.display_name}
                   {s.owned && (
                     <span className="ml-1.5 text-xs text-amber-500">×{s.quantity}</span>
                   )}
