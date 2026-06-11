@@ -5,6 +5,12 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import CollectionClient, { type CountryData } from './CollectionClient'
 import { getContinent } from '@/lib/continents'
 
+/** Extrait le numéro de fin d'un sticker_id (ex: FRA20 → 20) */
+function stickerNumber(id: string): number {
+  const m = id.match(/(\d+)$/)
+  return m ? parseInt(m[1], 10) : 0
+}
+
 // Pays à exclure du classement (stickers spéciaux, badges, etc.)
 const EXCLUDED_COUNTRIES = new Set(['Special', 'FIFA World Cup'])
 
@@ -24,7 +30,7 @@ export default async function CollectionPage() {
       .select('sticker_id, display_name, country'),
     supabaseAdmin
       .from('user_collection')
-      .select('sticker_id')
+      .select('sticker_id, quantity')
       .eq('user_id', user.id),
   ])
 
@@ -34,14 +40,14 @@ export default async function CollectionPage() {
     country: string
   }[]
 
-  const ownedIds = new Set(
-    (collectionResult.data ?? []).map((r) => r.sticker_id as string)
-  )
+  const collectionRows = (collectionResult.data ?? []) as { sticker_id: string; quantity: number }[]
+  const ownedIds  = new Set(collectionRows.map((r) => r.sticker_id))
+  const quantityMap = new Map(collectionRows.map((r) => [r.sticker_id, r.quantity]))
 
   // ── Grouper par pays ──────────────────────────────────────────
   const countryMap = new Map<
     string,
-    { sticker_id: string; display_name: string; owned: boolean }[]
+    { sticker_id: string; display_name: string; owned: boolean; quantity: number }[]
   >()
 
   for (const s of allStickers) {
@@ -51,6 +57,7 @@ export default async function CollectionPage() {
       sticker_id: s.sticker_id,
       display_name: s.display_name,
       owned: ownedIds.has(s.sticker_id),
+      quantity: quantityMap.get(s.sticker_id) ?? 0,
     })
   }
 
@@ -62,11 +69,8 @@ export default async function CollectionPage() {
     const total = stickers.length
     const pct = total > 0 ? Math.round((ownedCount / total) * 100) : 0
 
-    // Trier : possédés d'abord, puis alphabétique
-    stickers.sort((a, b) => {
-      if (a.owned !== b.owned) return a.owned ? -1 : 1
-      return a.display_name.localeCompare(b.display_name)
-    })
+    // Trier par numéro de sticker (ex: FRA1 < FRA20)
+    stickers.sort((a, b) => stickerNumber(a.sticker_id) - stickerNumber(b.sticker_id))
 
     countries.push({
       country,
