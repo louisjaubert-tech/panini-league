@@ -256,7 +256,7 @@ function ReceiveTab({
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-gray-500">
-                  {member.username} peut te donner {stickers.length} sticker{stickers.length > 1 ? 's' : ''}
+                  {member.username}{' '} peut te donner {stickers.length} sticker{stickers.length > 1 ? 's' : ''}
                 </p>
               </button>
 
@@ -425,7 +425,7 @@ function GiveTab({
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-gray-500">
-                  {member.username} a besoin de {stickers.length} de tes doublons
+                  {member.username}{' '} a besoin de {stickers.length} de tes doublons
                 </p>
               </button>
 

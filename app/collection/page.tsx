@@ -123,7 +123,7 @@ export default async function CollectionPage() {
 
   // ── Données sections badge ─────────────────────────────────────
   const emblemSection: BadgeSectionData = {
-    title: '🛡️ Emblèmes des sélections',
+    title: '🛡️ Emblèmes Pays',
     items: emblems,
     ownedCount: emblems.filter((s) => s.owned).length,
   }

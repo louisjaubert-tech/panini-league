@@ -26,7 +26,7 @@ export default async function HomePage() {
             alt="Panini Club"
             width={340}
             height={340}
-            className="object-contain drop-shadow-2xl"
+            className="w-[200px] sm:w-[280px] lg:w-[340px] h-auto object-contain drop-shadow-2xl"
             priority
           />
         </div>

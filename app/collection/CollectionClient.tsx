@@ -27,7 +27,7 @@ export type BadgeSectionData = {
   ownedCount: number
 }
 
-const CONTINENTS = ['Tous', 'Europe', 'Amérique', 'Asie', 'Afrique', 'Océanie']
+const CONTINENTS = ['Tous', 'Europe', 'Amérique', 'Asie', 'Afrique', 'Océanie', 'Autres']
 
 type SortBy = 'pct' | 'alpha'
 
@@ -400,7 +400,11 @@ export default function CollectionClient({
   const isSearching = searchQuery.trim().length > 0
 
   const filteredCountries = countries
-    .filter((c) => activeContinent === 'Tous' || c.continent === activeContinent)
+    .filter((c) => {
+      if (activeContinent === 'Tous') return true
+      if (activeContinent === 'Autres') return false
+      return c.continent === activeContinent
+    })
     .filter((c) => {
       if (!isSearching) return true
       return c.stickers.some((s) =>
@@ -526,7 +530,7 @@ export default function CollectionClient({
       </div>
 
       {/* ── Sections badges (emblèmes + team photos) ── */}
-      {!isSearching && (
+      {!isSearching && (activeContinent === 'Tous' || activeContinent === 'Autres') && (
         <div className="space-y-2 pt-2 border-t border-white/10">
           <p className="text-xs text-gray-500 pb-1">Stickers non scannables — ajout manuel uniquement</p>
           <BadgeSection section={emblemSection} onAdd={handleAdd} onRemove={handleRemove} isGuest={isGuest} />

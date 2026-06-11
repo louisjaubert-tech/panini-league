@@ -676,17 +676,11 @@ export default function ScanClient({ isGuest = false }: { isGuest?: boolean }) {
       {/* En-tête */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white">Scanner des stickers</h1>
-        <p className="mt-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-gray-300">
-          📸 Prends une photo ici ou dépose plusieurs photos d&apos;un coup si tu les as déjà prises.
-          Chaque photo est analysée automatiquement.
-        </p>
-        <p className="mt-2 rounded-xl bg-white/5 px-4 py-3 text-xs text-gray-500">
-          ℹ️ Seuls les stickers portraits de joueurs sont reconnus. Les stickers de photos d&apos;équipes,
-          logos de sélections nationales et pages spéciales ne sont pas comptabilisés pour l&apos;instant.
-        </p>
-        <p className="mt-2 rounded-xl bg-white/5 px-4 py-3 text-xs text-gray-400">
-          💡 Tu peux aussi ajouter des stickers manuellement sur la page{' '}
-          <a href="/collection" className="font-semibold text-orange-400 hover:text-orange-300 underline underline-offset-2 transition-colors whitespace-nowrap">Ma collection</a>.
+        <p className="mt-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-gray-400 space-y-1">
+          📸 Dépose une ou plusieurs photos de stickers — chacune est analysée automatiquement.
+          Seuls les <span className="text-gray-300">portraits de joueurs</span> sont reconnus (pas les emblèmes ni photos d&apos;équipe).
+          Tu peux aussi ajouter des stickers manuellement sur{' '}
+          <a href="/collection" className="font-semibold text-orange-400 hover:text-orange-300 underline underline-offset-2 whitespace-nowrap">Ma collection</a>.
         </p>
       </div>
 
