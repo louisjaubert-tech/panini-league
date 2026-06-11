@@ -45,7 +45,7 @@ export default async function HomePage() {
             <Link
               href="/register"
               className="rounded-xl px-8 py-3.5 text-base font-bold transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#dc2626', color: '#fff' }}
+              style={{ backgroundColor: '#f97316', color: '#fff' }}
             >
               S&apos;inscrire
             </Link>

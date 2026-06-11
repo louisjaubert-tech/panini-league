@@ -145,7 +145,7 @@ export default function ResetPasswordPage() {
               type="submit"
               disabled={!sessionReady || submitStatus === 'loading'}
               className="w-full rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#dc2626' }}
+              style={{ backgroundColor: '#f97316' }}
             >
               {submitStatus === 'loading' ? 'Mise à jour…' : 'Mettre à jour le mot de passe'}
             </button>
