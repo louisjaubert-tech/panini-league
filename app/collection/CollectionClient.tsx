@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
-import { addSticker } from '@/app/actions/collection'
-import type { NewBadge, NewTrophy } from '@/lib/checkBadges'
+import { useState, useCallback, useRef } from 'react'
+import { addSticker, removeSticker } from '@/app/actions/collection'
 
 export type StickerItem = {
   sticker_id: string
@@ -22,6 +21,8 @@ export type CountryData = {
 
 const CONTINENTS = ['Tous', 'Europe', 'Amérique', 'Asie', 'Afrique', 'Océanie']
 
+type SortBy = 'pct' | 'alpha'
+
 // ── Toast ─────────────────────────────────────────────────────────────────────
 
 type Toast = { id: number; message: string }
@@ -33,7 +34,7 @@ function ToastList({ toasts }: { toasts: Toast[] }) {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className="rounded-xl bg-yellow-400 px-5 py-3 text-sm font-semibold text-gray-900 shadow-lg animate-fade-in"
+          className="rounded-xl bg-yellow-400 px-5 py-3 text-sm font-semibold text-gray-900 shadow-lg"
         >
           {t.message}
         </div>
@@ -42,47 +43,84 @@ function ToastList({ toasts }: { toasts: Toast[] }) {
   )
 }
 
-// ── Bouton + ─────────────────────────────────────────────────────────────────
+// ── Contrôles sticker (−  [n]  +) ─────────────────────────────────────────────
 
-function AddButton({
+function StickerControls({
   stickerId,
   owned,
   onAdd,
+  onRemove,
 }: {
   stickerId: string
   owned: boolean
-  onAdd: (id: string) => void
+  onAdd: (id: string, qty: number) => Promise<void>
+  onRemove: (id: string) => Promise<void>
 }) {
-  const [flash, setFlash] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [qty, setQty] = useState(1)
+  const [addFlash, setAddFlash] = useState(false)
+  const [removeFlash, setRemoveFlash] = useState(false)
+  const [loading, setLoading] = useState<'add' | 'remove' | null>(null)
 
-  async function handleClick(e: React.MouseEvent) {
+  async function handleAdd(e: React.MouseEvent) {
     e.stopPropagation()
     if (loading) return
-    setLoading(true)
-    await onAdd(stickerId)
-    setLoading(false)
-    setFlash(true)
-    setTimeout(() => setFlash(false), 1500)
+    setLoading('add')
+    await onAdd(stickerId, qty)
+    setLoading(null)
+    setAddFlash(true)
+    setTimeout(() => setAddFlash(false), 1200)
   }
 
-  if (flash) {
-    return <span className="shrink-0 text-xs font-medium text-green-400">✓ Ajouté !</span>
+  async function handleRemove(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (loading || !owned) return
+    setLoading('remove')
+    await onRemove(stickerId)
+    setLoading(null)
+    setRemoveFlash(true)
+    setTimeout(() => setRemoveFlash(false), 1200)
   }
 
   return (
-    <button
-      onClick={handleClick}
-      disabled={loading}
-      title={owned ? 'Ajouter un doublon' : 'Ajouter à ma collection'}
-      className={`shrink-0 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold transition-colors disabled:opacity-40 ${
-        owned
-          ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/40'
-          : 'bg-green-500/20 text-green-400 hover:bg-green-500/40'
-      }`}
-    >
-      +
-    </button>
+    <div className="shrink-0 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+      {/* Flash messages */}
+      {removeFlash && <span className="text-xs text-red-400 w-14 text-right">✓ Retiré</span>}
+      {addFlash && !removeFlash && <span className="text-xs text-green-400 w-14 text-right">✓ Ajouté !</span>}
+
+      {/* Bouton − */}
+      <button
+        onClick={handleRemove}
+        disabled={!owned || loading !== null}
+        title="Retirer de ma collection"
+        className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500/15 text-red-400 text-sm font-bold hover:bg-red-500/30 transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
+      >
+        −
+      </button>
+
+      {/* Input quantité */}
+      <input
+        type="number"
+        min={1}
+        max={99}
+        value={qty}
+        onChange={(e) => setQty(Math.max(1, Math.min(99, parseInt(e.target.value) || 1)))}
+        className="w-8 rounded bg-white/10 text-center text-xs text-white focus:outline-none focus:ring-1 focus:ring-orange-500/50 py-0.5 tabular-nums"
+      />
+
+      {/* Bouton + */}
+      <button
+        onClick={handleAdd}
+        disabled={loading !== null}
+        title={owned ? 'Ajouter un doublon' : 'Ajouter à ma collection'}
+        className={`flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold transition-colors disabled:opacity-40 ${
+          owned
+            ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/40'
+            : 'bg-green-500/20 text-green-400 hover:bg-green-500/40'
+        }`}
+      >
+        +
+      </button>
+    </div>
   )
 }
 
@@ -93,16 +131,17 @@ function CountryRow({
   forceOpen,
   searchQuery,
   onAdd,
+  onRemove,
 }: {
   data: CountryData
   forceOpen: boolean
   searchQuery: string
-  onAdd: (id: string) => void
+  onAdd: (id: string, qty: number) => Promise<void>
+  onRemove: (id: string) => Promise<void>
 }) {
   const [localOpen, setLocalOpen] = useState(false)
   const isOpen = forceOpen || localOpen
 
-  // Filtrer les stickers selon la recherche
   const visibleStickers = searchQuery
     ? data.stickers.filter((s) =>
         s.display_name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -110,11 +149,7 @@ function CountryRow({
     : data.stickers
 
   const pctColor =
-    data.pct === 100
-      ? 'bg-yellow-400'
-      : data.pct >= 50
-      ? 'bg-orange-500'
-      : 'bg-white/30'
+    data.pct === 100 ? 'bg-yellow-400' : data.pct >= 50 ? 'bg-orange-500' : 'bg-white/30'
 
   return (
     <div className="rounded-xl border border-white/10 overflow-hidden">
@@ -138,9 +173,7 @@ function CountryRow({
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <span className="text-sm text-gray-400 tabular-nums w-10 text-right">
-            {data.pct}%
-          </span>
+          <span className="text-sm text-gray-400 tabular-nums w-10 text-right">{data.pct}%</span>
           <svg
             className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
             fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
@@ -154,17 +187,19 @@ function CountryRow({
         <div className="border-t border-white/10 px-5 py-3 bg-black/20">
           <ul className="space-y-1">
             {visibleStickers.map((s) => (
-              <li
-                key={s.sticker_id}
-                className="flex items-center justify-between gap-2 py-0.5"
-              >
+              <li key={s.sticker_id} className="flex items-center justify-between gap-2 py-0.5">
                 <span className={`text-sm truncate flex-1 ${s.owned ? 'text-white' : 'text-gray-600'}`}>
                   {s.owned ? '✓ ' : '○ '}{s.display_name}
                   {s.quantity > 1 && (
                     <span className="ml-1.5 text-xs text-amber-500">×{s.quantity}</span>
                   )}
                 </span>
-                <AddButton stickerId={s.sticker_id} owned={s.owned} onAdd={onAdd} />
+                <StickerControls
+                  stickerId={s.sticker_id}
+                  owned={s.owned}
+                  onAdd={onAdd}
+                  onRemove={onRemove}
+                />
               </li>
             ))}
           </ul>
@@ -180,6 +215,7 @@ export default function CollectionClient({ countries: initialCountries }: { coun
   const [countries, setCountries] = useState<CountryData[]>(initialCountries)
   const [activeContinent, setActiveContinent] = useState('Tous')
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<SortBy>('pct')
   const [toasts, setToasts] = useState<Toast[]>([])
   const toastIdRef = useRef(0)
 
@@ -189,70 +225,66 @@ export default function CollectionClient({ countries: initialCountries }: { coun
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500)
   }
 
-  const handleAdd = useCallback(async (stickerId: string) => {
-    // Optimistic update
+  // ── Mise à jour optimiste de la quantité d'un sticker ──────────────────────
+  function applyDelta(stickerId: string, delta: number) {
     setCountries((prev) =>
       prev.map((country) => {
         const idx = country.stickers.findIndex((s) => s.sticker_id === stickerId)
         if (idx === -1) return country
-
-        const stickers = country.stickers.map((s, i) =>
-          i === idx
-            ? { ...s, owned: true, quantity: s.quantity + 1 }
-            : s
-        )
+        const stickers = country.stickers.map((s, i) => {
+          if (i !== idx) return s
+          const newQty = Math.max(0, s.quantity + delta)
+          return { ...s, quantity: newQty, owned: newQty > 0 }
+        })
         const ownedCount = stickers.filter((s) => s.owned).length
         const pct = country.total > 0 ? Math.round((ownedCount / country.total) * 100) : 0
         return { ...country, stickers, ownedCount, pct }
       })
     )
+  }
 
-    const result = await addSticker(stickerId)
-
+  const handleAdd = useCallback(async (stickerId: string, qty: number) => {
+    applyDelta(stickerId, qty)
+    const result = await addSticker(stickerId, qty)
     if ('error' in result) {
-      // Rollback
-      setCountries((prev) =>
-        prev.map((country) => {
-          const idx = country.stickers.findIndex((s) => s.sticker_id === stickerId)
-          if (idx === -1) return country
-          const wasOwned = country.stickers[idx].quantity > 1
-          const stickers = country.stickers.map((s, i) =>
-            i === idx
-              ? { ...s, owned: wasOwned, quantity: Math.max(0, s.quantity - 1) }
-              : s
-          )
-          const ownedCount = stickers.filter((s) => s.owned).length
-          const pct = country.total > 0 ? Math.round((ownedCount / country.total) * 100) : 0
-          return { ...country, stickers, ownedCount, pct }
-        })
-      )
+      applyDelta(stickerId, -qty)           // rollback
       addToast(`❌ Erreur : ${result.error}`)
       return
     }
+    for (const b of result.new_badges)  addToast(`🏅 Nouveau badge : ${b.name} !`)
+    for (const t of result.new_trophies) addToast(`🏆 Nouveau trophée : ${t.name} !`)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Toasts badges / trophées
-    for (const b of result.new_badges) {
-      addToast(`🏅 Nouveau badge : ${b.name} !`)
+  const handleRemove = useCallback(async (stickerId: string) => {
+    applyDelta(stickerId, -1)
+    const result = await removeSticker(stickerId)
+    if ('error' in result) {
+      applyDelta(stickerId, 1)              // rollback
+      addToast(`❌ Erreur : ${result.error}`)
     }
-    for (const t of result.new_trophies) {
-      addToast(`🏆 Nouveau trophée : ${t.name} !`)
-    }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Filtrage continent + recherche
+  // ── Filtrage + tri ─────────────────────────────────────────────────────────
+  const isSearching = searchQuery.trim().length > 0
+
   const filteredCountries = countries
     .filter((c) => activeContinent === 'Tous' || c.continent === activeContinent)
     .filter((c) => {
-      if (!searchQuery) return true
+      if (!isSearching) return true
       return c.stickers.some((s) =>
         s.display_name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     })
-
-  const isSearching = searchQuery.trim().length > 0
+    .slice()
+    .sort((a, b) => {
+      if (sortBy === 'alpha') return a.country.localeCompare(b.country, 'fr')
+      // pct décroissant, puis alpha
+      if (b.pct !== a.pct) return b.pct - a.pct
+      return a.country.localeCompare(b.country, 'fr')
+    })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Barre de recherche */}
       <div className="relative">
         <svg
@@ -266,7 +298,7 @@ export default function CollectionClient({ countries: initialCountries }: { coun
           placeholder="Rechercher un joueur…"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-9 pr-4 text-sm text-white placeholder-gray-500 focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/30"
+          className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-9 pr-9 text-sm text-white placeholder-gray-500 focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/30"
         />
         {searchQuery && (
           <button
@@ -278,24 +310,49 @@ export default function CollectionClient({ countries: initialCountries }: { coun
         )}
       </div>
 
-      {/* Filtres continent */}
+      {/* Tri + filtres continent (masqués pendant la recherche) */}
       {!isSearching && (
-        <div className="flex flex-wrap gap-2">
-          {CONTINENTS.map((c) => (
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Toggle tri */}
+          <div className="flex rounded-lg border border-white/10 overflow-hidden text-xs font-medium">
             <button
-              key={c}
               type="button"
-              onClick={() => setActiveContinent(c)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                activeContinent === c
-                  ? 'text-white'
-                  : 'border border-white/15 text-gray-400 hover:border-white/30 hover:text-white'
+              onClick={() => setSortBy('pct')}
+              className={`px-3 py-1.5 transition-colors ${
+                sortBy === 'pct' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'
               }`}
-              style={activeContinent === c ? { backgroundColor: '#f97316' } : {}}
             >
-              {c}
+              % complétion
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => setSortBy('alpha')}
+              className={`px-3 py-1.5 border-l border-white/10 transition-colors ${
+                sortBy === 'alpha' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              A → Z
+            </button>
+          </div>
+
+          {/* Filtres continent */}
+          <div className="flex flex-wrap gap-2">
+            {CONTINENTS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setActiveContinent(c)}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  activeContinent === c
+                    ? 'text-white'
+                    : 'border border-white/15 text-gray-400 hover:border-white/30 hover:text-white'
+                }`}
+                style={activeContinent === c ? { backgroundColor: '#f97316' } : {}}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -313,6 +370,7 @@ export default function CollectionClient({ countries: initialCountries }: { coun
               forceOpen={isSearching}
               searchQuery={searchQuery}
               onAdd={handleAdd}
+              onRemove={handleRemove}
             />
           ))
         )}
