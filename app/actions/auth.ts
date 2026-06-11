@@ -24,11 +24,20 @@ export async function login(_prev: AuthState, formData: FormData): Promise<AuthS
   }
 
   const cookieStore = await cookies()
+  const isProduction = process.env.NODE_ENV === 'production'
+
   cookieStore.set('sb-access-token', data.session.access_token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction,
     sameSite: 'lax',
     maxAge: data.session.expires_in,
+    path: '/',
+  })
+  cookieStore.set('sb-refresh-token', data.session.refresh_token, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 30, // 30 jours
     path: '/',
   })
 
@@ -62,11 +71,19 @@ export async function register(_prev: AuthState, formData: FormData): Promise<Au
 
   if (data.session) {
     const cookieStore = await cookies()
+    const isProduction = process.env.NODE_ENV === 'production'
     cookieStore.set('sb-access-token', data.session.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       sameSite: 'lax',
       maxAge: data.session.expires_in,
+      path: '/',
+    })
+    cookieStore.set('sb-refresh-token', data.session.refresh_token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30, // 30 jours
       path: '/',
     })
     redirect('/')
@@ -79,5 +96,6 @@ export async function logout() {
   await supabase.auth.signOut()
   const cookieStore = await cookies()
   cookieStore.delete('sb-access-token')
+  cookieStore.delete('sb-refresh-token')
   redirect('/login')
 }

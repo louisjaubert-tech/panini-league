@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import CollectionClient, { type CountryData, type BadgeSectionData } from './CollectionClient'
 import { getContinent } from '@/lib/continents'
+import { COUNTRY_FR } from '@/lib/countryNames'
 
 /** Extrait le numéro de fin d'un sticker_id (ex: FRA20 → 20) */
 function stickerNumber(id: string): number {
@@ -10,8 +11,14 @@ function stickerNumber(id: string): number {
   return m ? parseInt(m[1], 10) : 0
 }
 
+/** Retourne false pour les IDs "stars" sans numéro (ex: LY, KM, CR…) */
+function isRegularSticker(id: string): boolean {
+  return /\d/.test(id)
+}
+
 // Pays à exclure du classement (stickers spéciaux)
 const EXCLUDED_COUNTRIES = new Set(['Special', 'FIFA World Cup'])
+
 
 export default async function CollectionPage() {
   // ── Auth (optionnelle) ────────────────────────────────────────
@@ -73,17 +80,19 @@ export default async function CollectionPage() {
         emblems.push(entry)
       }
     } else {
+      // Ignorer les stickers "stars" sans numéro dans l'ID (LY, KM, CR…)
+      if (!isRegularSticker(s.sticker_id)) continue
       // player (et autres)
       if (!countryMap.has(s.country)) countryMap.set(s.country, [])
       countryMap.get(s.country)!.push({ sticker_id: s.sticker_id, display_name: s.display_name, owned, quantity })
     }
   }
 
-  // Trier emblèmes et team photos par pays alphabétique
-  const sortByCountry = (a: { country: string }, b: { country: string }) =>
-    a.country.localeCompare(b.country, 'fr')
-  emblems.sort(sortByCountry)
-  teamPhotos.sort(sortByCountry)
+  // Trier emblèmes et team photos par nom de pays français alphabétique
+  const sortByCountryFR = (a: { country: string }, b: { country: string }) =>
+    (COUNTRY_FR[a.country] ?? a.country).localeCompare(COUNTRY_FR[b.country] ?? b.country, 'fr')
+  emblems.sort(sortByCountryFR)
+  teamPhotos.sort(sortByCountryFR)
 
   // ── Construire le tableau de données pays (joueurs) ────────────
   const countries: CountryData[] = []
@@ -97,6 +106,7 @@ export default async function CollectionPage() {
 
     countries.push({
       country,
+      countryFR: COUNTRY_FR[country] ?? country,
       continent: getContinent(country),
       total,
       ownedCount,
@@ -107,7 +117,7 @@ export default async function CollectionPage() {
 
   countries.sort((a, b) => {
     if (b.pct !== a.pct) return b.pct - a.pct
-    return a.country.localeCompare(b.country)
+    return a.countryFR.localeCompare(b.countryFR, 'fr')
   })
 
   // ── Données sections badge ─────────────────────────────────────

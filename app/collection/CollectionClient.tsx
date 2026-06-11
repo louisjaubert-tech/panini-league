@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { addSticker, removeSticker } from '@/app/actions/collection'
+import { countryFR } from '@/lib/countryNames'
 
 export type StickerItem = {
   sticker_id: string
@@ -12,6 +13,7 @@ export type StickerItem = {
 
 export type CountryData = {
   country: string
+  countryFR: string
   continent: string
   total: number
   ownedCount: number
@@ -187,7 +189,7 @@ function BadgeSection({
               <li key={s.sticker_id} className="flex items-center justify-between gap-2 py-0.5">
                 <span className={`text-sm truncate flex-1 ${s.owned ? 'text-white' : 'text-gray-600'}`}>
                   {s.owned ? '✓ ' : '○ '}
-                  <span className="text-gray-400 text-xs mr-1">{s.country}</span>
+                  <span className="text-gray-400 text-xs mr-1">{countryFR(s.country)}</span>
                   {s.display_name}
                   {s.owned && (
                     <span className="ml-1.5 text-xs text-amber-500">×{s.quantity}</span>
@@ -251,7 +253,7 @@ function CountryRow({
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="font-semibold text-white truncate">{data.country}</span>
+            <span className="font-semibold text-white truncate">{data.countryFR}</span>
             <span className="ml-3 shrink-0 text-sm font-medium" style={{ color: '#ffd60a' }}>
               {data.ownedCount}/{data.total}
             </span>
@@ -405,10 +407,10 @@ export default function CollectionClient({
     })
     .slice()
     .sort((a, b) => {
-      if (sortBy === 'alpha') return a.country.localeCompare(b.country, 'fr')
+      if (sortBy === 'alpha') return a.countryFR.localeCompare(b.countryFR, 'fr')
       // pct décroissant, puis alpha
       if (b.pct !== a.pct) return b.pct - a.pct
-      return a.country.localeCompare(b.country, 'fr')
+      return a.countryFR.localeCompare(b.countryFR, 'fr')
     })
 
   return (
