@@ -8,7 +8,7 @@ export function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const protectedPaths = ['/dashboard', '/scan']
+  const protectedPaths = ['/dashboard']
   if (!token && protectedPaths.some((p) => pathname.startsWith(p))) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
