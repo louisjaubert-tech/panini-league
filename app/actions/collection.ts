@@ -104,6 +104,13 @@ export async function removeSticker(stickerId: string): Promise<RemoveStickerRes
   const ok = await decrementSticker(supabaseAdmin, userId, stickerId)
   if (!ok) return { error: 'Erreur lors du retrait.' }
 
+  // Recalcule les badges (y compris révocation si critères non remplis)
+  try {
+    await checkBadges(userId)
+  } catch (err) {
+    console.error('[removeSticker] checkBadges:', err)
+  }
+
   const newQuantity = Math.max(0, (existing.quantity as number) - 1)
   return { success: true, quantity: newQuantity }
 }

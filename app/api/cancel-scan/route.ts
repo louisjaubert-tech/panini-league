@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { decrementSticker } from '@/lib/collection'
+import { checkBadges } from '@/lib/checkBadges'
 
 export async function POST(request: NextRequest) {
   let body: { pack_id?: unknown; user_id?: unknown }
@@ -48,6 +49,13 @@ export async function POST(request: NextRequest) {
       .eq('id', pack_id)
 
     console.log(`[cancel-scan] pack_openings ocr_status → 'cancelled' pour pack_id=${pack_id}`)
+
+    // Recalcule + révoque les badges si critères non remplis
+    try {
+      await checkBadges(user_id)
+    } catch (err) {
+      console.error('[cancel-scan] checkBadges:', err)
+    }
 
     return NextResponse.json({ success: true, removed })
   }

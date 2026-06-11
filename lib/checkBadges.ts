@@ -1,5 +1,10 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
+/** Seuls les stickers d'équipe standard (ESP15, FRA8…) comptent pour les totaux pays */
+function isRegularStickerId(id: string): boolean {
+  return /^[A-Z]{2,5}\d+$/.test(id)
+}
+
 // ════════════════════════════════════════════════════════════
 // Types partagés
 // ════════════════════════════════════════════════════════════
@@ -163,8 +168,10 @@ export async function checkBadges(userId: string): Promise<{ new_badges: NewBadg
     .from('stickers_reference')
     .select('sticker_id, country')
 
+  // Ne compter que les stickers standard (exclure CC-LAM*, LY…) pour les totaux pays
   const refCountryTotal = new Map<string, number>()
   for (const s of allStickers ?? []) {
+    if (!isRegularStickerId(s.sticker_id as string)) continue
     const c = s.country as string
     if (c) refCountryTotal.set(c, (refCountryTotal.get(c) ?? 0) + 1)
   }
@@ -202,6 +209,31 @@ export async function checkBadges(userId: string): Promise<{ new_badges: NewBadg
     } else {
       console.log(`[checkBadges] 🏅 nouveau badge : ${badge.badge_id} — ${badge.name}`)
       newBadges.push({ badge_id: badge.badge_id, name: badge.name, points: badge.points })
+    }
+  }
+
+  // ── Révocation : retirer les badges qui ne sont plus mérités ──────────────
+  for (const badge of (allBadges ?? []) as BadgeRef[]) {
+    if (!earnedIds.has(badge.badge_id)) continue   // pas encore gagné, rien à révoquer
+
+    const stillValid = evaluateBadge(badge, {
+      totalUnique, totalDuplicates, countriesCount,
+      countryMap, refCountryTotal, ownedStickerIds,
+      sessionCards, europeanCountries,
+    })
+
+    if (!stillValid) {
+      const { error: delErr } = await supabaseAdmin
+        .from('user_badges')
+        .delete()
+        .eq('user_id', userId)
+        .eq('badge_id', badge.badge_id)
+
+      if (delErr) {
+        console.error(`[checkBadges] revoke badge ${badge.badge_id}:`, delErr.message)
+      } else {
+        console.log(`[checkBadges] ❌ badge révoqué : ${badge.badge_id} — ${badge.name}`)
+      }
     }
   }
 
