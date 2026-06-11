@@ -11,9 +11,10 @@ function stickerNumber(id: string): number {
   return m ? parseInt(m[1], 10) : 0
 }
 
-/** Retourne false pour les IDs "stars" sans numéro (ex: LY, KM, CR…) */
+/** Retourne true uniquement pour les stickers d'équipe standard (ex: ESP15, FRA8, SWE10).
+ *  Exclut les cartes spéciales : CC-LAM1, CC-US5, LY, KM, CR… */
 function isRegularSticker(id: string): boolean {
-  return /\d/.test(id)
+  return /^[A-Z]{2,5}\d+$/.test(id)
 }
 
 // Pays à exclure du classement (stickers spéciaux)
