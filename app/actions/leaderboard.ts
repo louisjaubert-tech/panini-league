@@ -107,6 +107,8 @@ export type LeagueMemberRow = {
   rank: number
   userId: string
   username: string
+  uniqueCards: number
+  duplicates: number
   pct: number
   badgeCount: number
   trophyCount: number
@@ -127,7 +129,7 @@ export async function fetchLeagueLeaderboard(
 
   const [profilesResult, collectionsResult, badgesResult, trophiesResult] = await Promise.all([
     supabaseAdmin.from('profiles').select('id, username').in('id', memberIds),
-    supabaseAdmin.from('user_collection').select('user_id').in('user_id', memberIds),
+    supabaseAdmin.from('user_collection').select('user_id, sticker_id, quantity').in('user_id', memberIds),
     supabaseAdmin.from('user_badges').select('user_id').in('user_id', memberIds),
     supabaseAdmin
       .from('league_trophies')
@@ -136,10 +138,16 @@ export async function fetchLeagueLeaderboard(
       .in('user_id', memberIds),
   ])
 
+  const REGULAR_ID = /^[A-Z]{2,5}\d+$/
   const collectionCount: Record<string, number> = {}
+  const duplicatesCount: Record<string, number> = {}
   for (const r of collectionsResult.data ?? []) {
     const uid = r.user_id as string
+    const sid = r.sticker_id as string
+    if (!REGULAR_ID.test(sid)) continue   // exclure CC-LAM*, LY, KM…
+    const qty = r.quantity as number ?? 1
     collectionCount[uid] = (collectionCount[uid] ?? 0) + 1
+    if (qty > 1) duplicatesCount[uid] = (duplicatesCount[uid] ?? 0) + (qty - 1)
   }
 
   const badgeCount: Record<string, number> = {}
@@ -158,16 +166,21 @@ export async function fetchLeagueLeaderboard(
     (profilesResult.data ?? []).map((p) => [p.id as string, p.username as string])
   )
 
-  const members: Omit<LeagueMemberRow, 'rank'>[] = memberIds.map((uid) => ({
-    userId: uid,
-    username: profileMap.get(uid) ?? 'Joueur',
-    pct: Math.round(((collectionCount[uid] ?? 0) / TOTAL_STICKERS) * 100),
-    badgeCount: badgeCount[uid] ?? 0,
-    trophyCount: trophyCount[uid] ?? 0,
-    isCurrentUser: uid === currentUserId,
-  }))
+  const members: Omit<LeagueMemberRow, 'rank'>[] = memberIds.map((uid) => {
+    const unique = collectionCount[uid] ?? 0
+    return {
+      userId: uid,
+      username: profileMap.get(uid) ?? 'Joueur',
+      uniqueCards: unique,
+      duplicates: duplicatesCount[uid] ?? 0,
+      pct: Math.round((unique / TOTAL_STICKERS) * 100),
+      badgeCount: badgeCount[uid] ?? 0,
+      trophyCount: trophyCount[uid] ?? 0,
+      isCurrentUser: uid === currentUserId,
+    }
+  })
 
-  members.sort((a, b) => b.pct - a.pct)
+  members.sort((a, b) => b.uniqueCards - a.uniqueCards)
   return members.map((m, i) => ({ rank: i + 1, ...m }))
 }
 

@@ -1,6 +1,13 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
-export const TOTAL_STICKERS = 960
+/** Nombre réel de stickers réguliers dans l'album (joueurs + emblèmes + team photos,
+ *  hors stickers spéciaux CC-LAM*, LY, KM…) */
+export const TOTAL_STICKERS = 979
+
+/** Retourne true pour les stickers d'équipe standard (ESP15, FRA8, emblèmes inclus) */
+function isRegularStickerId(id: string): boolean {
+  return /^[A-Z]{2,5}\d+$/.test(id)
+}
 
 export type UserStats = {
   unique:     number   // lignes dans user_collection
@@ -11,37 +18,25 @@ export type UserStats = {
 }
 
 export async function getUserStats(userId: string): Promise<UserStats> {
-  const [uniqueResult, duplicatesResult, countriesResult] = await Promise.all([
-    // Cartes uniques
-    supabaseAdmin
-      .from('user_collection')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId),
+  // On charge tous les stickers avec leur quantité et pays, puis on filtre côté code
+  const { data: allRows } = await supabaseAdmin
+    .from('user_collection')
+    .select('sticker_id, quantity, stickers_reference!inner(country)')
+    .eq('user_id', userId)
 
-    // Doublons
-    supabaseAdmin
-      .from('user_collection')
-      .select('quantity')
-      .eq('user_id', userId)
-      .gt('quantity', 1),
+  // Garder uniquement les stickers réguliers (exclure CC-LAM*, LY, KM…)
+  type CollRow = { sticker_id: string; quantity: number; stickers_reference: { country: string } | { country: string }[] | null }
+  const rows = ((allRows ?? []) as CollRow[]).filter((r) => isRegularStickerId(r.sticker_id))
 
-    // Pays distincts via join
-    supabaseAdmin
-      .from('user_collection')
-      .select('stickers_reference!inner(country)')
-      .eq('user_id', userId),
-  ])
+  const unique = rows.length
 
-  const unique = uniqueResult.count ?? 0
-
-  const duplicates =
-    duplicatesResult.data?.reduce(
-      (sum, row) => sum + ((row.quantity as number) - 1),
-      0
-    ) ?? 0
+  const duplicates = rows.reduce(
+    (sum, row) => sum + (row.quantity > 1 ? row.quantity - 1 : 0),
+    0
+  )
 
   const countriesSet = new Set<string>()
-  for (const row of countriesResult.data ?? []) {
+  for (const row of rows) {
     const raw = row.stickers_reference
     const ref = (Array.isArray(raw) ? raw[0] : raw) as { country: string } | null
     if (ref?.country) countriesSet.add(ref.country)

@@ -69,11 +69,12 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
       .order('opened_at', { ascending: false })
       .limit(5),
 
-    // Total blisters scannés
+    // Total blisters scannés (hors annulés)
     supabaseAdmin
       .from('pack_openings')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', uid),
+      .eq('user_id', uid)
+      .neq('ocr_status', 'cancelled'),
   ])
 
   const uniqueCards   = stats.unique
