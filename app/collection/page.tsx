@@ -1,5 +1,4 @@
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import CollectionClient, { type CountryData, type BadgeSectionData } from './CollectionClient'
@@ -15,23 +14,29 @@ function stickerNumber(id: string): number {
 const EXCLUDED_COUNTRIES = new Set(['Special', 'FIFA World Cup'])
 
 export default async function CollectionPage() {
-  // ── Auth ─────────────────────────────────────────────────────
+  // ── Auth (optionnelle) ────────────────────────────────────────
   const cookieStore = await cookies()
   const token = cookieStore.get('sb-access-token')?.value
-  if (!token) redirect('/login')
+  let userId: string | null = null
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-  if (authError || !user) redirect('/login')
+  if (token) {
+    const { data: { user } } = await supabase.auth.getUser(token)
+    if (user) userId = user.id
+  }
+
+  const isGuest = !userId
 
   // ── Fetch données ─────────────────────────────────────────────
   const [refResult, collectionResult] = await Promise.all([
     supabaseAdmin
       .from('stickers_reference')
       .select('sticker_id, display_name, country, category'),
-    supabaseAdmin
-      .from('user_collection')
-      .select('sticker_id, quantity')
-      .eq('user_id', user.id),
+    isGuest
+      ? Promise.resolve({ data: [] })
+      : supabaseAdmin
+          .from('user_collection')
+          .select('sticker_id, quantity')
+          .eq('user_id', userId!),
   ])
 
   const allStickers = (refResult.data ?? []) as {
@@ -135,6 +140,7 @@ export default async function CollectionPage() {
           countries={countries}
           emblemSection={emblemSection}
           teamPhotoSection={teamPhotoSection}
+          isGuest={isGuest}
         />
       </div>
     </main>

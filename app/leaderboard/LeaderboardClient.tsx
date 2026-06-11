@@ -496,7 +496,24 @@ function LeagueTab({
     })
   }, [selectedId, currentUserId])
 
-  if (!currentUserId || userLeagues.length === 0) {
+  if (!currentUserId) {
+    return (
+      <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-white/15 p-12 text-center">
+        <p className="text-sm text-gray-400">
+          Connecte-toi pour voir le classement de ta ligue.
+        </p>
+        <Link
+          href="/register"
+          className="rounded-lg px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ backgroundColor: '#f97316' }}
+        >
+          S&apos;inscrire
+        </Link>
+      </div>
+    )
+  }
+
+  if (userLeagues.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-white/15 p-12 text-center">
         <p className="text-sm text-gray-400">

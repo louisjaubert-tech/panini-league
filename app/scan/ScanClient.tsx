@@ -196,9 +196,11 @@ type ModalPhase = 'review' | 'confirming' | 'cancelling' | 'confirmed'
 function ResultsModal({
   results,
   onDone,
+  isGuest,
 }: {
   results: AccumulatedResults
   onDone: () => void
+  isGuest: boolean
 }) {
   const [phase, setPhase]           = useState<ModalPhase>('review')
   const [newBadges, setNewBadges]   = useState<Badge[]>([])
@@ -385,12 +387,21 @@ function ResultsModal({
         <div className="p-6 border-t border-white/10 space-y-2">
           {phase === 'review' && (
             <>
-              <button
-                onClick={handleConfirm}
-                className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition-colors"
-              >
-                ✅ Confirmer — ajouter {matched.length} sticker{matched.length !== 1 ? 's' : ''} à ma collection
-              </button>
+              {isGuest ? (
+                <a
+                  href="/register"
+                  className="block w-full rounded-lg bg-orange-500 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-orange-400 transition-colors"
+                >
+                  🎉 Crée ton compte pour sauvegarder ces {matched.length} sticker{matched.length !== 1 ? 's' : ''} !
+                </a>
+              ) : (
+                <button
+                  onClick={handleConfirm}
+                  className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition-colors"
+                >
+                  ✅ Confirmer — ajouter {matched.length} sticker{matched.length !== 1 ? 's' : ''} à ma collection
+                </button>
+              )}
               <button
                 onClick={handleCancel}
                 className="w-full rounded-lg border border-white/15 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/10 transition-colors"
@@ -448,9 +459,15 @@ function ResultsModal({
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
-export default function ScanClient() {
+export default function ScanClient({ isGuest = false }: { isGuest?: boolean }) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Pour les invités : un UUID temporaire généré une fois au montage
+  const guestUserIdRef = useRef<string | null>(null)
+  if (isGuest && !guestUserIdRef.current) {
+    guestUserIdRef.current = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+  }
 
   // Sélection
   const [files, setFiles]     = useState<File[]>([])
@@ -527,6 +544,10 @@ export default function ScanClient() {
       const fd = new FormData()
       fd.append('photo', file)
       if (force) fd.append('force', 'true')
+      if (isGuest && guestUserIdRef.current) {
+        fd.append('is_guest', 'true')
+        fd.append('guest_user_id', guestUserIdRef.current)
+      }
 
       // Calcul du hash SHA-256 côté client
       try {
@@ -864,7 +885,7 @@ export default function ScanClient() {
               </div>
             ))}
           </div>
-          <ResultsModal results={results} onDone={handleReset} />
+          <ResultsModal results={results} onDone={handleReset} isGuest={isGuest} />
         </>
       )}
     </div>

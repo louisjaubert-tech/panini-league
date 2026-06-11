@@ -136,10 +136,12 @@ function BadgeSection({
   section,
   onAdd,
   onRemove,
+  isGuest,
 }: {
   section: BadgeSectionData
   onAdd: (id: string, qty: number) => Promise<void>
   onRemove: (id: string) => Promise<void>
+  isGuest: boolean
 }) {
   const [open, setOpen] = useState(false)
   const total = section.items.length
@@ -191,12 +193,14 @@ function BadgeSection({
                     <span className="ml-1.5 text-xs text-amber-500">×{s.quantity}</span>
                   )}
                 </span>
-                <StickerControls
-                  stickerId={s.sticker_id}
-                  owned={s.owned}
-                  onAdd={onAdd}
-                  onRemove={onRemove}
-                />
+                {!isGuest && (
+                  <StickerControls
+                    stickerId={s.sticker_id}
+                    owned={s.owned}
+                    onAdd={onAdd}
+                    onRemove={onRemove}
+                  />
+                )}
               </li>
             ))}
           </ul>
@@ -217,12 +221,14 @@ function CountryRow({
   searchQuery,
   onAdd,
   onRemove,
+  isGuest,
 }: {
   data: CountryData
   forceOpen: boolean
   searchQuery: string
   onAdd: (id: string, qty: number) => Promise<void>
   onRemove: (id: string) => Promise<void>
+  isGuest: boolean
 }) {
   const [localOpen, setLocalOpen] = useState(false)
   const isOpen = forceOpen || localOpen
@@ -279,12 +285,14 @@ function CountryRow({
                     <span className="ml-1.5 text-xs text-amber-500">×{s.quantity}</span>
                   )}
                 </span>
-                <StickerControls
-                  stickerId={s.sticker_id}
-                  owned={s.owned}
-                  onAdd={onAdd}
-                  onRemove={onRemove}
-                />
+                {!isGuest && (
+                  <StickerControls
+                    stickerId={s.sticker_id}
+                    owned={s.owned}
+                    onAdd={onAdd}
+                    onRemove={onRemove}
+                  />
+                )}
               </li>
             ))}
           </ul>
@@ -300,10 +308,12 @@ export default function CollectionClient({
   countries: initialCountries,
   emblemSection: initialEmblemSection,
   teamPhotoSection: initialTeamPhotoSection,
+  isGuest = false,
 }: {
   countries: CountryData[]
   emblemSection: BadgeSectionData
   teamPhotoSection: BadgeSectionData
+  isGuest?: boolean
 }) {
   const [countries, setCountries] = useState<CountryData[]>(initialCountries)
   const [emblemSection, setEmblemSection] = useState<BadgeSectionData>(initialEmblemSection)
@@ -403,6 +413,22 @@ export default function CollectionClient({
 
   return (
     <div className="space-y-5">
+      {/* Bannière invité */}
+      {isGuest && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-orange-500/30 bg-orange-500/10 px-5 py-4">
+          <p className="text-sm text-orange-200">
+            👋 Tu vois ici tous les stickers de la Coupe du Monde 2026. Crée ton compte pour suivre ta vraie collection !
+          </p>
+          <a
+            href="/register"
+            className="shrink-0 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: '#f97316' }}
+          >
+            S&apos;inscrire
+          </a>
+        </div>
+      )}
+
       {/* Barre de recherche */}
       <div className="relative">
         <svg
@@ -489,6 +515,7 @@ export default function CollectionClient({
               searchQuery={searchQuery}
               onAdd={handleAdd}
               onRemove={handleRemove}
+              isGuest={isGuest}
             />
           ))
         )}
@@ -498,8 +525,8 @@ export default function CollectionClient({
       {!isSearching && (
         <div className="space-y-2 pt-2 border-t border-white/10">
           <p className="text-xs text-gray-500 pb-1">Stickers non scannables — ajout manuel uniquement</p>
-          <BadgeSection section={emblemSection} onAdd={handleAdd} onRemove={handleRemove} />
-          <BadgeSection section={teamPhotoSection} onAdd={handleAdd} onRemove={handleRemove} />
+          <BadgeSection section={emblemSection} onAdd={handleAdd} onRemove={handleRemove} isGuest={isGuest} />
+          <BadgeSection section={teamPhotoSection} onAdd={handleAdd} onRemove={handleRemove} isGuest={isGuest} />
         </div>
       )}
 

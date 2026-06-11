@@ -1,6 +1,4 @@
-import Image from 'next/image'
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import ScanClient from './ScanClient'
@@ -27,18 +25,24 @@ export type PackRow = {
 export default async function ScanPage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('sb-access-token')?.value
-  if (!token) redirect('/login')
+  let userId: string | null = null
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-  if (authError || !user) redirect('/login')
+  if (token) {
+    const { data: { user } } = await supabase.auth.getUser(token)
+    if (user) userId = user.id
+  }
 
-  // Fetch 10 derniers scans
-  const { data: packsRaw } = await supabaseAdmin
-    .from('pack_openings')
-    .select('id, opened_at, ocr_status, photo_url')
-    .eq('user_id', user.id)
-    .order('opened_at', { ascending: false })
-    .limit(10)
+  const isGuest = !userId
+
+  // Fetch 10 derniers scans (uniquement si connecté)
+  const { data: packsRaw } = isGuest
+    ? { data: [] }
+    : await supabaseAdmin
+        .from('pack_openings')
+        .select('id, opened_at, ocr_status, photo_url')
+        .eq('user_id', userId!)
+        .order('opened_at', { ascending: false })
+        .limit(10)
 
   const packIds = (packsRaw ?? []).map((p) => p.id as string)
 
@@ -101,8 +105,8 @@ export default async function ScanPage() {
   return (
     <main className="min-h-screen bg-[#0a1628] px-4 sm:px-6 py-12">
       <div className="mx-auto max-w-lg">
-        <ScanClient />
-        <RecentScansClient packs={packs} userId={user.id} />
+        <ScanClient isGuest={isGuest} />
+        {!isGuest && <RecentScansClient packs={packs} userId={userId!} />}
       </div>
     </main>
   )

@@ -16,18 +16,21 @@ export async function uploadPack(_prev: ScanState, formData: FormData): Promise<
   const cookieStore = await cookies()
   const token = cookieStore.get('sb-access-token')?.value
 
-  if (!token) {
-    return { error: 'Non authentifié.' }
+  const photoHash   = formData.get('photo_hash') as string | null
+  const force       = formData.get('force') === 'true'
+  const isGuestMode = formData.get('is_guest') === 'true'
+  const guestUserId = formData.get('guest_user_id') as string | null
+
+  // Mode guest : utiliser le guest_user_id fourni, pas de cookie requis
+  let effectiveUserId: string
+  if (isGuestMode && guestUserId) {
+    effectiveUserId = guestUserId
+  } else {
+    if (!token) return { error: 'Non authentifié.' }
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    if (authError || !user) return { error: 'Session invalide.' }
+    effectiveUserId = user.id
   }
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-
-  if (authError || !user) {
-    return { error: 'Session invalide.' }
-  }
-
-  const photoHash = formData.get('photo_hash') as string | null
-  const force     = formData.get('force') === 'true'
 
   const file = formData.get('photo') as File | null
 
@@ -49,7 +52,7 @@ export async function uploadPack(_prev: ScanState, formData: FormData): Promise<
       const { data: existing } = await supabaseAdmin
         .from('pack_openings')
         .select('id, photo_url')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
         .eq('photo_hash', photoHash)
         .neq('ocr_status', 'cancelled')
         .limit(1)
@@ -67,7 +70,7 @@ export async function uploadPack(_prev: ScanState, formData: FormData): Promise<
   }
 
   const timestamp = Date.now()
-  const path = `${user.id}/${timestamp}.jpg`
+  const path = `${effectiveUserId}/${timestamp}.jpg`
 
   const arrayBuffer = await file.arrayBuffer()
   const buffer = new Uint8Array(arrayBuffer)
@@ -86,7 +89,7 @@ export async function uploadPack(_prev: ScanState, formData: FormData): Promise<
 
   const { data: pack, error: dbError } = await supabaseAdmin
     .from('pack_openings')
-    .insert({ user_id: user.id, photo_url: publicUrl, ocr_status: 'pending', ...(photoHash ? { photo_hash: photoHash } : {}) })
+    .insert({ user_id: effectiveUserId, photo_url: publicUrl, ocr_status: 'pending', ...(photoHash ? { photo_hash: photoHash } : {}) })
     .select('id')
     .single()
 
@@ -94,5 +97,5 @@ export async function uploadPack(_prev: ScanState, formData: FormData): Promise<
     return { error: `Erreur base de données : ${dbError?.message}` }
   }
 
-  return { pack_id: pack.id as string, user_id: user.id }
+  return { pack_id: pack.id as string, user_id: effectiveUserId }
 }
