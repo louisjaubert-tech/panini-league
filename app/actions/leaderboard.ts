@@ -347,3 +347,55 @@ export async function fetchLeagueTrophies(
     }
   })
 }
+
+// ── fetchLeagueMemberBadges ───────────────────────────────────────────────────
+
+export type LeagueBadgeRow = {
+  badge_id: string
+  name: string
+  points: number
+  earners: { username: string; obtained_at: string }[]
+}
+
+export async function fetchLeagueMemberBadges(leagueId: string): Promise<LeagueBadgeRow[]> {
+  const { data: memberRows } = await supabaseAdmin
+    .from('league_members')
+    .select('user_id')
+    .eq('league_id', leagueId)
+
+  const memberIds = (memberRows ?? []).map((m) => m.user_id as string)
+  if (memberIds.length === 0) return []
+
+  const [profilesResult, badgesResult, badgeRefResult] = await Promise.all([
+    supabaseAdmin.from('profiles').select('id, username').in('id', memberIds),
+    supabaseAdmin
+      .from('user_badges')
+      .select('user_id, badge_id, obtained_at')
+      .in('user_id', memberIds)
+      .order('obtained_at', { ascending: true }),
+    supabaseAdmin
+      .from('badges_reference')
+      .select('badge_id, name, points')
+      .order('badge_id', { ascending: true }),
+  ])
+
+  const profileMap = new Map(
+    (profilesResult.data ?? []).map((p) => [p.id as string, p.username as string ?? 'Joueur']),
+  )
+
+  // Grouper par badge_id
+  const badgeMap = new Map<string, { username: string; obtained_at: string }[]>()
+  for (const row of badgesResult.data ?? []) {
+    const bid = row.badge_id as string
+    const username = profileMap.get(row.user_id as string) ?? 'Joueur'
+    if (!badgeMap.has(bid)) badgeMap.set(bid, [])
+    badgeMap.get(bid)!.push({ username, obtained_at: row.obtained_at as string })
+  }
+
+  return (badgeRefResult.data ?? []).map((ref) => ({
+    badge_id: ref.badge_id as string,
+    name: ref.name as string,
+    points: ref.points as number,
+    earners: badgeMap.get(ref.badge_id as string) ?? [],
+  }))
+}

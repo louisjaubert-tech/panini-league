@@ -7,10 +7,12 @@ import {
   fetchLeaderboard,
   fetchLeagueLeaderboard,
   fetchLeagueTrophies,
+  fetchLeagueMemberBadges,
   fetchTrophyProgress,
   type LeaderboardRow,
   type LeagueMemberRow,
   type LeagueTrophyRow,
+  type LeagueBadgeRow,
   type TrophyProgressRow,
 } from '@/app/actions/leaderboard'
 import type { UserLeague } from './page'
@@ -459,6 +461,106 @@ function TrophiesSection({
   )
 }
 
+// ── Section badges des membres ────────────────────────────────────────────────
+
+const BADGE_STARS: Record<string, number> = {
+  b01: 1, b02: 3, b04: 2, b05: 1, b06: 2, b08: 3, b09: 3, b10: 2,
+  b11: 3, b12: 2, b13: 1, b14: 2, b15: 1, b16: 1, b17: 2, b18: 3,
+}
+
+function BadgesSection({
+  badges,
+  loading,
+}: {
+  badges: LeagueBadgeRow[]
+  loading: boolean
+}) {
+  const [open, setOpen] = useState(false)
+
+  const earnedBadges = badges.filter((b) => b.earners.length > 0)
+  const totalEarned = badges.reduce((sum, b) => sum + b.earners.length, 0)
+
+  return (
+    <section>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-3 mb-3"
+      >
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-white">🏅 Badges des membres</h3>
+          <span
+            className="rounded-full px-2 py-0.5 text-xs font-bold"
+            style={{ backgroundColor: 'rgba(249,115,22,0.12)', color: '#f97316' }}
+          >
+            {earnedBadges.length} / {badges.length}
+          </span>
+        </div>
+        <svg
+          className={`h-4 w-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`}
+          fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        loading ? (
+          <div className="py-6 text-center text-xs text-gray-500">Chargement…</div>
+        ) : badges.length === 0 ? (
+          <div className="py-4 text-center text-xs text-gray-600">Aucun badge disponible.</div>
+        ) : (
+          <ul className="space-y-2">
+            {badges.map(({ badge_id, name, earners }) => {
+              const stars = BADGE_STARS[badge_id] ?? 2
+              const hasEarners = earners.length > 0
+
+              return (
+                <li
+                  key={badge_id}
+                  className={`rounded-xl border px-4 py-3 ${
+                    hasEarners
+                      ? 'border-orange-500/20 bg-orange-500/5'
+                      : 'border-white/5 bg-white/[0.03] opacity-40'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-lg shrink-0 mt-0.5">{hasEarners ? '🏅' : '🔒'}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className={`text-sm font-semibold ${hasEarners ? 'text-white' : 'text-gray-500'}`}>
+                          {name}
+                        </p>
+                        <span className="text-xs text-yellow-400">
+                          {'★'.repeat(stars)}{'☆'.repeat(3 - stars)}
+                        </span>
+                      </div>
+                      {hasEarners ? (
+                        <p className="text-xs mt-1" style={{ color: '#f97316' }}>
+                          {earners.map((e, i) => (
+                            <span key={i}>
+                              {i > 0 && <span className="text-gray-600">, </span>}
+                              <span className="font-medium text-white">{e.username}</span>
+                            </span>
+                          ))}
+                          {earners.length === 1
+                            ? <span className="text-gray-500"> a ce badge</span>
+                            : <span className="text-gray-500"> ont ce badge</span>}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-600 mt-0.5">Personne dans la ligue</p>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )
+      )}
+    </section>
+  )
+}
+
 // ── Onglet Ma ligue ───────────────────────────────────────────────────────────
 
 function LeagueTab({
@@ -475,8 +577,10 @@ function LeagueTab({
   )
   const [members, setMembers] = useState<LeagueMemberRow[]>([])
   const [trophies, setTrophies] = useState<LeagueTrophyRow[]>([])
+  const [badges, setBadges] = useState<LeagueBadgeRow[]>([])
   const [loading, setLoading] = useState(false)
   const [trophiesLoading, setTrophiesLoading] = useState(false)
+  const [badgesLoading, setBadgesLoading] = useState(false)
   const prevId = useRef<string>('')
 
   useEffect(() => {
@@ -485,14 +589,18 @@ function LeagueTab({
     prevId.current = selectedId
     setLoading(true)
     setTrophiesLoading(true)
+    setBadgesLoading(true)
     Promise.all([
       fetchLeagueLeaderboard(selectedId, currentUserId),
       fetchLeagueTrophies(selectedId),
-    ]).then(([membersData, trophiesData]) => {
+      fetchLeagueMemberBadges(selectedId),
+    ]).then(([membersData, trophiesData, badgesData]) => {
       setMembers(membersData)
       setTrophies(trophiesData)
+      setBadges(badgesData)
       setLoading(false)
       setTrophiesLoading(false)
+      setBadgesLoading(false)
     })
   }, [selectedId, currentUserId])
 
@@ -653,6 +761,11 @@ function LeagueTab({
       {/* Trophées de la ligue */}
       <div className="border-t border-white/10 pt-6">
         <TrophiesSection trophies={trophies} loading={trophiesLoading} leagueId={selectedId} />
+      </div>
+
+      {/* Badges des membres */}
+      <div className="border-t border-white/10 pt-6">
+        <BadgesSection badges={badges} loading={badgesLoading} />
       </div>
     </div>
   )
