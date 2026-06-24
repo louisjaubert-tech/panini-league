@@ -219,3 +219,39 @@ export async function matchStickers(
 
   return results
 }
+
+// ════════════════════════════════════════════════════════════
+// Version sans DB — pour les visiteurs non connectés
+// ════════════════════════════════════════════════════════════
+
+export async function matchStickersGuest(blocs: string[]): Promise<StickerResultRow[]> {
+  const { data: refs, error: refsError } = await supabaseAdmin
+    .from('stickers_reference')
+    .select('sticker_id, display_name, normalized_name')
+
+  if (refsError) {
+    console.error('[matchStickersGuest] stickers_reference:', refsError.message)
+    throw new Error('Impossible de charger la référence.')
+  }
+
+  const stickerRefs = refs as StickerRef[]
+  const results: StickerResultRow[] = []
+
+  for (const bloc of blocs) {
+    const rawName = extractName(bloc)
+    const { sticker_id, display_name, confidence } = matchOne(rawName, stickerRefs)
+
+    let status: StickerResultRow['status']
+    if (confidence >= 0.85 && sticker_id) {
+      status = 'matched'
+    } else if (confidence >= 0.70 && sticker_id) {
+      status = 'needs_review'
+    } else {
+      status = 'unmatched'
+    }
+
+    results.push({ sticker_id, display_name, confidence, status, is_duplicate: false })
+  }
+
+  return results
+}

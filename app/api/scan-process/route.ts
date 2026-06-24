@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import sharp from 'sharp'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import { matchStickers } from '@/lib/matchSticker'
+import { matchStickers, matchStickersGuest } from '@/lib/matchSticker'
 
 // ════════════════════════════════════════════════════════════
 // Helpers Vision — extraction des paragraphes avec coordonnées
@@ -99,18 +99,16 @@ export async function POST(request: NextRequest) {
   console.log(`[scan-process] API key check: ${process.env.GOOGLE_VISION_API_KEY?.slice(0, 10)}`)
 
   // ── Validation ────────────────────────────────────────────
-  let body: { pack_id?: unknown; user_id?: unknown }
+  let body: { pack_id?: unknown; user_id?: unknown; is_guest?: unknown; image_base64?: unknown }
   try {
     body = await request.json()
   } catch {
     return NextResponse.json({ error: 'Corps JSON invalide.' }, { status: 400 })
   }
 
-  const { pack_id, user_id } = body
+  const { pack_id, user_id, is_guest, image_base64 } = body
+  const isGuest = is_guest === true
 
-  if (typeof pack_id !== 'string' || !pack_id) {
-    return NextResponse.json({ error: '`pack_id` manquant.' }, { status: 400 })
-  }
   if (typeof user_id !== 'string' || !user_id) {
     return NextResponse.json({ error: '`user_id` manquant.' }, { status: 400 })
   }
@@ -120,45 +118,60 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'GOOGLE_VISION_API_KEY non configurée.' }, { status: 500 })
   }
 
-  // ── 1. Récupérer le pack et son photo_url ─────────────────
-  const { data: pack, error: packErr } = await supabaseAdmin
-    .from('pack_openings')
-    .select('id, photo_url, ocr_status')
-    .eq('id', pack_id)
-    .eq('user_id', user_id)
-    .single()
+  let rawBuffer: Buffer
 
-  if (packErr || !pack) {
-    console.error('[scan-process] pack_openings fetch:', packErr?.message)
-    return NextResponse.json({ error: 'Pack introuvable.' }, { status: 404 })
-  }
+  if (isGuest) {
+    // ── Mode guest : image en base64 fournie directement ──────
+    if (typeof image_base64 !== 'string' || !image_base64) {
+      return NextResponse.json({ error: '`image_base64` manquant en mode guest.' }, { status: 400 })
+    }
+    rawBuffer = Buffer.from(image_base64, 'base64')
+    console.log(`[scan-process] mode guest — buffer ${(rawBuffer.length / 1024).toFixed(1)} Ko`)
+  } else {
+    // ── Mode normal : récupérer le pack depuis la DB ──────────
+    if (typeof pack_id !== 'string' || !pack_id) {
+      return NextResponse.json({ error: '`pack_id` manquant.' }, { status: 400 })
+    }
 
-  if (!pack.photo_url) {
-    return NextResponse.json({ error: 'Ce pack n\'a pas de photo_url.' }, { status: 422 })
-  }
+    const { data: pack, error: packErr } = await supabaseAdmin
+      .from('pack_openings')
+      .select('id, photo_url, ocr_status')
+      .eq('id', pack_id)
+      .eq('user_id', user_id)
+      .single()
 
-  // Marquer en cours dès le début
-  await supabaseAdmin
-    .from('pack_openings')
-    .update({ ocr_status: 'processing' })
-    .eq('id', pack_id)
+    if (packErr || !pack) {
+      console.error('[scan-process] pack_openings fetch:', packErr?.message)
+      return NextResponse.json({ error: 'Pack introuvable.' }, { status: 404 })
+    }
 
-  // ── 2. Télécharger la photo ───────────────────────────────
-  console.log('[scan-process] téléchargement :', pack.photo_url)
+    if (!pack.photo_url) {
+      return NextResponse.json({ error: 'Ce pack n\'a pas de photo_url.' }, { status: 422 })
+    }
 
-  const imgRes = await fetch(pack.photo_url as string)
-  if (!imgRes.ok) {
+    // Marquer en cours dès le début
     await supabaseAdmin
       .from('pack_openings')
-      .update({ ocr_status: 'error' })
+      .update({ ocr_status: 'processing' })
       .eq('id', pack_id)
-    return NextResponse.json(
-      { error: `Impossible de télécharger l'image (HTTP ${imgRes.status}).` },
-      { status: 502 }
-    )
-  }
 
-  const rawBuffer = Buffer.from(await imgRes.arrayBuffer())
+    // ── 2. Télécharger la photo ─────────────────────────────
+    console.log('[scan-process] téléchargement :', pack.photo_url)
+
+    const imgRes = await fetch(pack.photo_url as string)
+    if (!imgRes.ok) {
+      await supabaseAdmin
+        .from('pack_openings')
+        .update({ ocr_status: 'error' })
+        .eq('id', pack_id)
+      return NextResponse.json(
+        { error: `Impossible de télécharger l'image (HTTP ${imgRes.status}).` },
+        { status: 502 }
+      )
+    }
+
+    rawBuffer = Buffer.from(await imgRes.arrayBuffer())
+  }
 
   // ── 3. Prétraitement Sharp ────────────────────────────────
   const beforeMeta = await sharp(rawBuffer).metadata()
@@ -248,10 +261,9 @@ export async function POST(request: NextRequest) {
   if (!visionRes.ok) {
     const errText = await visionRes.text()
     console.error('[scan-process] Vision API HTTP error:', errText)
-    await supabaseAdmin
-      .from('pack_openings')
-      .update({ ocr_status: 'error' })
-      .eq('id', pack_id)
+    if (!isGuest && typeof pack_id === 'string') {
+      await supabaseAdmin.from('pack_openings').update({ ocr_status: 'error' }).eq('id', pack_id)
+    }
     return NextResponse.json(
       { error: `Vision API error (HTTP ${visionRes.status}).` },
       { status: 502 }
@@ -263,10 +275,9 @@ export async function POST(request: NextRequest) {
 
   if (annotation?.error) {
     console.error('[scan-process] Vision API error:', annotation.error.message)
-    await supabaseAdmin
-      .from('pack_openings')
-      .update({ ocr_status: 'error' })
-      .eq('id', pack_id)
+    if (!isGuest && typeof pack_id === 'string') {
+      await supabaseAdmin.from('pack_openings').update({ ocr_status: 'error' }).eq('id', pack_id)
+    }
     return NextResponse.json({ error: annotation.error.message }, { status: 502 })
   }
 
@@ -320,27 +331,35 @@ export async function POST(request: NextRequest) {
   }
   console.log('[scan-process] ────────────────────────────────────────')
 
-  // ── 6. Matching des stickers (appel direct, sans HTTP) ───────
+  // ── 6. Matching des stickers ─────────────────────────────────
   let stickers
   try {
-    stickers = await matchStickers(blocs, user_id as string, pack_id as string)
+    if (isGuest) {
+      stickers = await matchStickersGuest(blocs)
+    } else {
+      stickers = await matchStickers(blocs, user_id as string, pack_id as string)
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur matching.'
-    console.error('[scan-process] matchStickers:', message)
-    await supabaseAdmin.from('pack_openings').update({ ocr_status: 'error' }).eq('id', pack_id)
+    console.error('[scan-process] matching:', message)
+    if (!isGuest && typeof pack_id === 'string') {
+      await supabaseAdmin.from('pack_openings').update({ ocr_status: 'error' }).eq('id', pack_id)
+    }
     return NextResponse.json({ error: message }, { status: 500 })
   }
 
-  // ── 7. Mettre à jour ocr_status = 'pending_confirmation' ────
-  const { error: updateErr } = await supabaseAdmin
-    .from('pack_openings')
-    .update({ ocr_status: 'pending_confirmation' })
-    .eq('id', pack_id)
+  if (!isGuest && typeof pack_id === 'string') {
+    // ── 7. Mettre à jour ocr_status = 'pending_confirmation' ──
+    const { error: updateErr } = await supabaseAdmin
+      .from('pack_openings')
+      .update({ ocr_status: 'pending_confirmation' })
+      .eq('id', pack_id)
 
-  if (updateErr) {
-    console.error('[scan-process] pack_openings update:', updateErr.message)
+    if (updateErr) {
+      console.error('[scan-process] pack_openings update:', updateErr.message)
+    }
   }
 
-  // ── 8. Réponse (badges/trophées différés jusqu'à confirm-scan) ──
-  return NextResponse.json({ pack_id, stickers })
+  // ── 8. Réponse ────────────────────────────────────────────────
+  return NextResponse.json({ pack_id: isGuest ? null : pack_id, stickers })
 }

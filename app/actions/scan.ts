@@ -10,6 +10,7 @@ export type ScanState = {
   user_id?: string
   duplicate?: boolean
   existing_photo_url?: string | null
+  is_guest?: boolean
 }
 
 export async function uploadPack(_prev: ScanState, formData: FormData): Promise<ScanState> {
@@ -44,6 +45,12 @@ export async function uploadPack(_prev: ScanState, formData: FormData): Promise<
 
   if (file.size > 10 * 1024 * 1024) {
     return { error: 'La photo ne doit pas dépasser 10 Mo.' }
+  }
+
+  // ── Mode guest : validation uniquement, pas d'upload ni DB ──────────────
+  if (isGuestMode && guestUserId) {
+    const fakePackId = `guest_${Date.now()}`
+    return { pack_id: fakePackId, user_id: guestUserId, is_guest: true }
   }
 
   // ── Vérification doublon par hash ─────────────────────────────────────────

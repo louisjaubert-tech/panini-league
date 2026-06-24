@@ -125,6 +125,20 @@ async function computeHash(file: File): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
+// ── Conversion fichier → base64 (pour le mode guest) ─────────────────────────
+
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      resolve(result.split(',')[1]) // enlever le préfixe data:image/...;base64,
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 // ── Alerte doublons ───────────────────────────────────────────────────────────
 
 function DuplicateAlert({
@@ -286,6 +300,7 @@ function ResultsModal({
   async function handleCancel() {
     setPhase('cancelling')
     for (const packId of results.packIds) {
+      if (packId.startsWith('guest_')) continue  // rien à annuler côté serveur
       try {
         await fetch('/api/cancel-scan', {
           method: 'POST',
@@ -568,6 +583,7 @@ export default function ScanClient({ isGuest = false }: { isGuest?: boolean }) {
 
       let packId: string
       let userId: string
+      let uploadIsGuest = false
       try {
         const uploadResult = await uploadPack({}, fd)
 
@@ -585,6 +601,7 @@ export default function ScanClient({ isGuest = false }: { isGuest?: boolean }) {
         }
         packId = uploadResult.pack_id
         userId = uploadResult.user_id
+        uploadIsGuest = uploadResult.is_guest === true
         if (!accumulated.userId) accumulated.userId = userId
       } catch (err) {
         updateStatus(idx, { phase: 'failed', error: err instanceof Error ? err.message : 'Erreur upload' })
@@ -596,10 +613,18 @@ export default function ScanClient({ isGuest = false }: { isGuest?: boolean }) {
       updateStatus(idx, { phase: 'analyzing' })
 
       try {
+        let scanBody: Record<string, unknown>
+        if (uploadIsGuest) {
+          const image_base64 = await fileToBase64(file)
+          scanBody = { is_guest: true, image_base64, user_id: userId }
+        } else {
+          scanBody = { pack_id: packId, user_id: userId }
+        }
+
         const res = await fetch('/api/scan-process', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pack_id: packId, user_id: userId }),
+          body: JSON.stringify(scanBody),
         })
 
         if (!res.ok) {
