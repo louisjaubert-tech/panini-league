@@ -235,6 +235,18 @@ export async function fetchTrophyProgress(
     collMap.get(r.user_id as string)?.add(r.sticker_id as string)
   }
 
+  const B19_TARGETS = [
+    'ENG16', 'ENG12', 'ENG6',
+    'FRA10', 'FRA18', 'FRA19',
+    'GER2',  'GER16', 'GER19',
+    'ESP7',  'ESP19', 'ESP3', 'ESP5',
+    'BRA15', 'BRA5',  'BRA20', 'BRA16',
+    'NED15', 'NED8',  'NED5',
+    'BEL19', 'ARG15',
+    'GHA14', 'MAR16', 'MAR6', 'CIV16',
+    'ALG8',  'MEX15', 'SWE17', 'JPN16',
+  ]
+
   // 4. Référence stickers (utile pour b12 et b14)
   let refRows: { sticker_id: string; country: string }[] = []
   if (trophyId === 'b12' || trophyId === 'b14') {
@@ -296,6 +308,10 @@ export async function fetchTrophyProgress(
         const have = [...owned].filter(id => id.endsWith('2')).length
         return Math.min(100, Math.round((have / 48) * 100))
       }
+      case 'b19': {
+        const have = B19_TARGETS.filter(id => owned.has(id)).length
+        return Math.round((have / B19_TARGETS.length) * 100)
+      }
       default:
         return 0
     }
@@ -334,6 +350,7 @@ export async function fetchLeagueTrophies(
     b16: 'Trophée Repos Bien Mérité',
     b17: 'Trophée Grosses Boules Dorées',
     b18: 'Trophée Lev Yachine',
+    b19: 'Trophée Erreurs de Casting',
   }
 
   return (data ?? []).map((row) => {

@@ -227,6 +227,7 @@ const ALL_TROPHIES = [
   { trophy_id: 'b16', name: 'Trophée Repos Bien Mérité',    description: 'Premier à avoir les 6 Lee de Corée du Sud : KOR7, KOR8, KOR9, KOR10, KOR12, KOR16' },
   { trophy_id: 'b17', name: 'Trophée Grosses Boules Dorées', description: "Premier à avoir tous les Ballons d'Or : ESP10, FRA15, ARG17, POR15, CRO9" },
   { trophy_id: 'b18', name: 'Trophée Lev Yachine',          description: 'Premier à avoir tous les gardiens titulaires de l\'album (les X2 de chaque sélection)' },
+  { trophy_id: 'b19', name: 'Trophée Erreurs de Casting',   description: 'Premier à avoir les 30 stars absentes de la Coupe du Monde (blessures ou choix du coach)' },
 ]
 
 function TrophiesSection({
@@ -465,7 +466,7 @@ function TrophiesSection({
 
 const BADGE_STARS: Record<string, number> = {
   b01: 1, b02: 3, b04: 2, b05: 1, b06: 2, b08: 3, b09: 3, b10: 2,
-  b11: 3, b12: 2, b13: 1, b14: 2, b15: 1, b16: 1, b17: 2, b18: 3,
+  b11: 3, b12: 2, b13: 1, b14: 2, b15: 1, b16: 1, b17: 2, b18: 3, b19: 3,
 }
 
 function BadgesSection({

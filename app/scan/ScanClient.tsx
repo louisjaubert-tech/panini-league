@@ -24,6 +24,7 @@ const BADGE_META: Record<string, { stars: number }> = {
   b16: { stars: 1 },
   b17: { stars: 2 },
   b18: { stars: 3 },
+  b19: { stars: 3 },
 }
 
 function getBadgeStars(badge_id: string): number {

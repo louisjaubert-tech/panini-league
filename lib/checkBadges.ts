@@ -136,6 +136,8 @@ function evaluateBadge(badge: BadgeRef, stats: Stats): boolean {
           const owned2 = [...stats.ownedStickerIds].filter(id => id.endsWith('2')).length
           return owned2 >= 48
         }
+        case 'b19':
+          return B19_TARGETS.every(id => stats.ownedStickerIds.has(id))
         default:
           return false
       }
@@ -145,6 +147,22 @@ function evaluateBadge(badge: BadgeRef, stats: Stats): boolean {
       return false
   }
 }
+
+// ════════════════════════════════════════════════════════════
+// b19 — Erreurs de casting Panini (30 absents de la Coupe du Monde)
+// ════════════════════════════════════════════════════════════
+
+const B19_TARGETS = [
+  'ENG16', 'ENG12', 'ENG6',
+  'FRA10', 'FRA18', 'FRA19',
+  'GER2',  'GER16', 'GER19',
+  'ESP7',  'ESP19', 'ESP3', 'ESP5',
+  'BRA15', 'BRA5',  'BRA20', 'BRA16',
+  'NED15', 'NED8',  'NED5',
+  'BEL19', 'ARG15',
+  'GHA14', 'MAR16', 'MAR6', 'CIV16',
+  'ALG8',  'MEX15', 'SWE17', 'JPN16',
+]
 
 // ════════════════════════════════════════════════════════════
 // Nations européennes (UEFA)
@@ -297,6 +315,7 @@ const LEAGUE_TROPHIES: { trophy_id: string; name: string }[] = [
   { trophy_id: 'b16', name: 'Trophée Repos Bien Mérité' },
   { trophy_id: 'b17', name: 'Trophée Grosses Boules Dorées' },
   { trophy_id: 'b18', name: 'Trophée Lev Yachine' },
+  { trophy_id: 'b19', name: 'Trophée Erreurs de Casting' },
 ]
 
 function checkTrophyCondition(
@@ -347,6 +366,9 @@ function checkTrophyCondition(
       )
       return targets.length > 0 && targets.every((r) => owned.has(r.sticker_id))
     }
+
+    case 'b19':
+      return B19_TARGETS.every((id) => owned.has(id))
 
     default:
       return false

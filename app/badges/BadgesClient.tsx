@@ -33,6 +33,7 @@ const BADGE_META: Record<string, { stars: number; description?: string }> = {
   b16: { stars: 1 },
   b17: { stars: 2 },
   b18: { stars: 3 },
+  b19: { stars: 3, description: "ils sont dans ton album mais pas à la coupe du monde pour cause de blessure ou de choix du coach !" },
 }
 
 function getStars(badge_id: string): number {
