@@ -72,15 +72,16 @@ export default function DashboardClient({
       <section>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { emoji: '📦', label: 'Doublons',          value: duplicates },
+            { emoji: '📦', label: 'Doublons',          value: duplicates, subtitle: 'exemplaires en trop' },
             { emoji: '🌍', label: 'Pays représentés',  value: countries },
             { emoji: '🏅', label: 'Badges obtenus',    value: earnedBadgesCount },
             { emoji: '📸', label: 'Blisters scannés',  value: totalPacks },
-          ].map(({ emoji, label, value }) => (
+          ].map(({ emoji, label, value, subtitle }) => (
             <div key={label} className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center">
               <p className="text-lg mb-1">{emoji}</p>
               <p className="text-xs font-medium text-gray-400 mb-1">{label}</p>
               <p className="text-2xl font-bold text-white">{value}</p>
+              {subtitle && <p className="text-[10px] text-gray-500 mt-0.5">{subtitle}</p>}
             </div>
           ))}
         </div>

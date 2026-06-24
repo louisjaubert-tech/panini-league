@@ -221,6 +221,7 @@ function CountryRow({
   data,
   forceOpen,
   searchQuery,
+  showDoublons,
   onAdd,
   onRemove,
   isGuest,
@@ -228,18 +229,20 @@ function CountryRow({
   data: CountryData
   forceOpen: boolean
   searchQuery: string
+  showDoublons: boolean
   onAdd: (id: string, qty: number) => Promise<void>
   onRemove: (id: string) => Promise<void>
   isGuest: boolean
 }) {
   const [localOpen, setLocalOpen] = useState(false)
-  const isOpen = forceOpen || localOpen
+  const isOpen = forceOpen || localOpen || showDoublons
 
-  const visibleStickers = searchQuery
-    ? data.stickers.filter((s) =>
-        s.display_name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : data.stickers
+  const visibleStickers = (() => {
+    let list = data.stickers
+    if (searchQuery) list = list.filter((s) => s.display_name.toLowerCase().includes(searchQuery.toLowerCase()))
+    if (showDoublons) list = list.filter((s) => s.quantity > 1)
+    return list
+  })()
 
   const pctColor =
     data.pct === 100 ? 'bg-yellow-400' : data.pct >= 50 ? 'bg-orange-500' : 'bg-white/30'
@@ -285,7 +288,10 @@ function CountryRow({
                   {s.owned ? '✓ ' : '○ '}
                   <span className="text-gray-500 text-xs mr-1">{s.sticker_id}</span>
                   {s.display_name}
-                  {s.owned && (
+                  {showDoublons && s.quantity > 1 && (
+                    <span className="ml-1.5 rounded-full bg-orange-500/20 px-1.5 py-0.5 text-xs font-semibold text-orange-400">×{s.quantity}</span>
+                  )}
+                  {!showDoublons && s.owned && s.quantity > 1 && (
                     <span className="ml-1.5 text-xs text-amber-500">×{s.quantity}</span>
                   )}
                 </span>
@@ -325,6 +331,7 @@ export default function CollectionClient({
   const [activeContinent, setActiveContinent] = useState('Tous')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortBy>('pct')
+  const [showDoublons, setShowDoublons] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
   const toastIdRef = useRef(0)
 
@@ -411,10 +418,13 @@ export default function CollectionClient({
         s.display_name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     })
+    .filter((c) => {
+      if (!showDoublons) return true
+      return c.stickers.some((s) => s.quantity > 1)
+    })
     .slice()
     .sort((a, b) => {
       if (sortBy === 'alpha') return a.countryFR.localeCompare(b.countryFR, 'fr')
-      // pct décroissant, puis alpha
       if (b.pct !== a.pct) return b.pct - a.pct
       return a.countryFR.localeCompare(b.countryFR, 'fr')
     })
@@ -505,6 +515,22 @@ export default function CollectionClient({
               </button>
             ))}
           </div>
+
+          {/* Toggle doublons */}
+          {!isGuest && (
+            <button
+              type="button"
+              onClick={() => setShowDoublons((v) => !v)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                showDoublons
+                  ? 'text-white'
+                  : 'border border-white/15 text-gray-400 hover:border-white/30 hover:text-white'
+              }`}
+              style={showDoublons ? { backgroundColor: '#f97316' } : {}}
+            >
+              📦 Mes doublons
+            </button>
+          )}
         </div>
       )}
 
@@ -521,6 +547,7 @@ export default function CollectionClient({
               data={country}
               forceOpen={isSearching}
               searchQuery={searchQuery}
+              showDoublons={showDoublons}
               onAdd={handleAdd}
               onRemove={handleRemove}
               isGuest={isGuest}
