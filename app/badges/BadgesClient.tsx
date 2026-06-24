@@ -23,7 +23,7 @@ const BADGE_META: Record<string, { stars: number; description?: string }> = {
   b05: { stars: 1, description: '50 doublons — à toi les dons et échanges avec les gens de ta ligue !' },
   b06: { stars: 2, description: 'Au moins 1 joueur de chacun des 48 pays participants à la Coupe du Monde 2026' },
   b08: { stars: 3 },
-  b09: { stars: 3 },
+  b09: { stars: 3, description: 'Posséder au moins 1 joueur de chaque pays européen participant à la Coupe du Monde 2026' },
   b10: { stars: 2 },
   b11: { stars: 3 },
   b12: { stars: 2, description: 'Progression : % de complétion de ton équipe la plus avancée' },
