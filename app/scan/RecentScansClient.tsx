@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import type { PackRow } from './page'
+import { fetchMorePacks } from './scanActions'
 
 function StatusBadge({ status }: { status: string }) {
   if (status === 'done') {
@@ -36,12 +37,23 @@ function StatusBadge({ status }: { status: string }) {
 
 type LightboxEntry = { url: string; label: string }
 
-export default function RecentScansClient({ packs, userId }: { packs: PackRow[]; userId: string }) {
+export default function RecentScansClient({ packs: initialPacks, userId }: { packs: PackRow[]; userId: string }) {
   const router = useRouter()
+  const [packs, setPacks] = useState<PackRow[]>(initialPacks)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [lightbox, setLightbox] = useState<LightboxEntry | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [cancelError, setCancelError] = useState<string | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(initialPacks.length === 20)
+
+  async function handleLoadMore() {
+    setLoadingMore(true)
+    const more = await fetchMorePacks(userId, packs.length)
+    setPacks((prev) => [...prev, ...more])
+    if (more.length < 20) setHasMore(false)
+    setLoadingMore(false)
+  }
 
   async function handleCancel(pack: PackRow) {
     const count = pack.stickers.length
@@ -117,6 +129,7 @@ export default function RecentScansClient({ packs, userId }: { packs: PackRow[];
             Aucun sticker scanné pour l&apos;instant. Lance-toi&nbsp;!&nbsp;📸
           </div>
         ) : (
+          <>
           <ul className="space-y-2">
             {packs.map((pack) => {
               const isExpanded = expandedId === pack.id
@@ -233,6 +246,19 @@ export default function RecentScansClient({ packs, userId }: { packs: PackRow[];
               )
             })}
           </ul>
+
+          {hasMore && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="rounded-xl border border-white/10 bg-white/5 px-6 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loadingMore ? 'Chargement…' : 'Voir plus'}
+              </button>
+            </div>
+          )}
+          </>
         )}
       </section>
     </>

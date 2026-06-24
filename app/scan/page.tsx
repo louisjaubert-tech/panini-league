@@ -34,7 +34,7 @@ export default async function ScanPage() {
 
   const isGuest = !userId
 
-  // Fetch 10 derniers scans (uniquement si connecté)
+  // Fetch 20 derniers scans (uniquement si connecté)
   const { data: packsRaw } = isGuest
     ? { data: [] }
     : await supabaseAdmin
@@ -42,7 +42,7 @@ export default async function ScanPage() {
         .select('id, opened_at, ocr_status, photo_url')
         .eq('user_id', userId!)
         .order('opened_at', { ascending: false })
-        .limit(10)
+        .limit(20)
 
   const packIds = (packsRaw ?? []).map((p) => p.id as string)
 
