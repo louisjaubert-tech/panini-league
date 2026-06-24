@@ -710,10 +710,26 @@ export default function ScanClient({ isGuest = false }: { isGuest?: boolean }) {
       {/* En-tête */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white">Scanner des stickers</h1>
-        <p className="mt-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-gray-300">
-          📸 Prends une photo ici ou dépose plusieurs photos d&apos;un coup si tu les as déjà prises.
-          Chaque photo est analysée automatiquement.
-        </p>
+        <div className="mt-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm space-y-2.5">
+          <div className="flex gap-2.5">
+            <span>1.</span>
+            <div>
+              <span className="text-gray-300">📸 Prends en photo au choix</span>
+              <ul className="mt-1 space-y-0.5 text-xs text-gray-400">
+                <li className="flex gap-2"><span className="shrink-0">a.</span><span>jusqu&apos;à 16 stickers d&apos;un coup, les uns à côté des autres</span></li>
+                <li className="flex gap-2"><span className="shrink-0">b.</span><span>directement chaque double page de ton album Panini</span></li>
+              </ul>
+            </div>
+          </div>
+          <div className="flex gap-2.5 text-gray-300">
+            <span>2.</span>
+            <span>Sélectionne et dépose ici <span className="font-semibold text-white">jusqu&apos;à 5 photos</span> d&apos;un coup</span>
+          </div>
+          <div className="flex gap-2.5 text-gray-300">
+            <span>3.</span>
+            <span>Attends un peu, confirme et tous ces stickers sont <span className="font-semibold text-white">ajoutés à ta collection automatiquement</span> !</span>
+          </div>
+        </div>
         <p className="mt-2 rounded-xl bg-white/5 px-4 py-3 text-xs text-gray-500">
           ℹ️ Seuls les stickers portraits de joueurs sont reconnus. Les stickers de photos d&apos;équipes,
           logos de sélections nationales et pages spéciales ne sont pas comptabilisés pour l&apos;instant.
